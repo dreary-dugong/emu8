@@ -1,26 +1,178 @@
 import random;
 
 class chip:
-    def __init__():
+    def __init__(self):
 
         #memory
-        mem = [0] * 4096; #main memory, each entry is one byte
-        pc = 512; #program counter
+        self.mem = [0] * 4096; #main memory, each entry is one byte
+        self.pc = 512; #program counter
                 #program space is expected to start 512 bytes in
 
         #registers
-        regs = [0]*16; #general purpose registers
-        regI = 0; #"I" register
-        regVF = 0; #"VF" register, usually used a flag
+        self.regs = [0]*16; #general purpose registers
+        self.regI = 0; #"I" register
+        self.regVF = 0; #"VF" register, usually used a flag
 
         #stack
-        stack = [0]*16; #stack of return addresses for subroutines
-        sp = 0; #stack pointer
+        self.stack = [0]*16; #stack of return addresses for subroutines
+        self.sp = 0; #stack pointer
 
         #timers
-        dt = 0; #delay timer register, decreases to 0 at 60Hz
-        st = 0; #sound timer registser, decreases to 0 at 60Hz
+        self.dt = 0; #delay timer register, decreases to 0 at 60Hz
+        self.st = 0; #sound timer registser, decreases to 0 at 60Hz
                 #plays a sound as it decrmeents
+
+        #display
+        load_display();
+        
+    def load_display():
+        """load the display as an empty matrix"""
+        #TODO: bigger display sizes? check roms for what they expect
+        self.disp = [] #2D boolean matrix representing the 63 x 32 display
+        for _ in range(64):
+            disp.append([0]*32)
+
+    def execute(inst):
+        """execute a single 16-bit integer instruction on the chip"""
+        #TODO: refactor to use dictionaries and first class functions
+
+        #instructions with no params
+        if inst == 0x00E0:
+            self.CLS();
+            return;
+        elif inst == 0x00EE:
+            self.RET();
+            return;
+
+        #instructions with a single 12 bit param (address)
+        prefix = inst >> 12; #first 4 bits encode instruction type
+        addr = inst & 0x0FFF; #last 12 bits encode param
+        if prefix == 0x1:
+            self.JP(addr);
+            return;
+        elif prefix == 0x2:
+            self.CALL(addr);
+            return;
+        elif prefix == 0xA:
+            self.LDI(addr);
+            return;
+        elif prefix == 0xB:
+            self.JP0(addr);
+            return;
+
+        #instructions with a 4-bit param (register) and 8-bit param (literal)
+        reg = addr >> 8; #middle 4 bits encode register
+        val = addr & 0x0FF; #last 8 bits encode literal byte
+        if prefix == 0x3:
+            self.SEval(reg, val);
+            return;
+        elif prefix == 0x4:
+            self.SNEval(reg, val);
+            return;
+        elif prefix == 0x6:
+            self.LDval(reg, val);
+            return;
+        elif prefix == 0x7:
+            self.ADDval(reg, val);
+            return;
+        elif prefix == 0xC:
+            self.RND(reg, val);
+            return;
+
+        #instructions with a single 4-bit param (register)
+        postfix = val;
+        if prefix == 0xE:
+            if postfix == 0x9E:
+                self.SKP(reg);
+                return;
+            elif postfix == 0xA1:
+                self.SKNP(reg);
+                return;
+        elif prefix == 0xF:
+            if postfix == 0x07:
+                self.LDregdt(reg);
+                return;
+            elif postfix == 0x0A:
+                self.LDkey(reg);
+                return;
+            elif postfix == 0x15:
+                self.LDdt(reg);
+                return;
+            elif postfix == 0x18:
+                self.LDst(reg);
+                return;
+            elif postfix == 0x1E:
+                self.ADDi(reg);
+                return;
+            elif postfix == 0x29:
+                self.LDdigit(reg);
+                return;
+            elif postfix == 0x33:
+                self.LDbcd(reg);
+                return;
+            elif postfix == 0x55:
+                self.LDmemreg(reg);
+                return;
+            elif postfix == 0x65:
+                self.LDregmem(reg);
+                return;
+
+        #instructions with two 4-bit parameters (registers)
+        reg1 = reg #rename since there's now 2 registers
+        reg2 = postfix >> 4 #second param is third set of 4 bits
+        postfix = postfix & 0x0F; #now there's an extra 4 bits on the end
+        
+        if prefix == 0x5:
+            if postfix == 0x0:
+                self.SEreg(reg1, reg2);
+                return;
+        elif prefix == 0x8:
+            if postfix == 0x0:
+                self.LDreg(reg1, reg2);
+                return;
+            elif postfix == 0x1:
+                self.OR(reg1, reg2);
+                return;
+            elif postfix == 0x2:
+                self.AND(reg1, reg2);
+                return;
+            elif postfix == 0x3:
+                self.XOR(reg1, reg2);
+                return;
+            elif postfix == 0x4:
+                self.ADDreg(reg1, reg2);
+                return;
+            elif posfix == 0x5:
+                self.SUB(reg1, reg2);
+                return;
+            elif postfix == 0x6:
+                self.SHR(reg1); #this is weird but it's in the spec
+                return;
+            elif postfix == 0x7:
+                self.SUBN(reg1, reg2);
+                return;
+            elif postfix == 0xE:
+                self.SHL(reg1); #another weird one
+                return;
+
+        elif prefix == 9:
+            if postfix == 0:
+                self.SNEreg(reg1, reg2);
+                return;
+
+        #instructions with 3 4-bit parameters (two registers, one 'nibble')
+        nibble = postfix;
+        if prefix == 0xD:
+            self.DRW(reg1, reg2, nibble);
+            return;
+        
+        #if it hasn't been decoded yet, it doesn't exist
+        raise(f"Bad instruction: {inst}")
+
+
+    def CLS(self):
+        """instruction to clear the display"""
+        self.load_display();
 
     def RET(self):
         """instruction to return from a subroutine"""
@@ -139,8 +291,8 @@ class chip:
 
     def SNEreg(self, reg1, reg2):
         """instruction to skip the next instruction if two registers
-        are equal"""
-        if self.regs[reg1] == self.regs[reg2]:
+        are not equal"""
+        if self.regs[reg1] != self.regs[reg2]:
             self.pc += 2;
         else:
             self.pc += 1;
