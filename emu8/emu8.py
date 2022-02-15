@@ -1,16 +1,17 @@
 import random;
 
+#TODO: implement countdown, display
 class Chip:
     #class constants
     DIGIT_MEM_INDEX = 0; #where in memory are the sprite reprs of digits
+    PROGRAM_MEM_INDEX = 512; #where is program space in memory
 
 
     def __init__(self):
 
         #memory
         self.mem = [0] * 4096; #main memory, each entry is one byte
-        self.pc = 512; #program counter
-                #program space is expected to start 512 bytes in
+        self.pc = Chip.PROGRAM_MEM_INDEX; #program counter
 
         #registers
         self.regs = [0]*16; #general purpose registers
@@ -32,22 +33,7 @@ class Chip:
 
         #keys 
         #these have to be set by a driver class
-        self.key0 = False
-        self.key1 = False
-        self.key2 = False
-        self.key3 = False
-        self.key4 = False
-        self.key5 = False
-        self.key6 = False
-        self.key7 = False
-        self.key8 = False
-        self.key9 = False
-        self.keyA = False
-        self.keyB = False
-        self.keyC = False
-        self.keyD = False
-        self.keyE = False
-        self.keyF = False
+        self.keys = [False] * 16
 
         #initial memory values
         self.load_digit_sprites();
@@ -57,7 +43,7 @@ class Chip:
         #TODO: bigger display sizes? check roms for what they expect
         self.disp = [] #2D boolean matrix representing the 63 x 32 display
         for _ in range(64):
-            disp.append([0]*32)
+            self.disp.append([0]*32)
 
     def load_digit_sprites(self):
         """load the sprite reprentations of digits into memory for use
@@ -81,10 +67,10 @@ class Chip:
         digitF = (0xF0, 0x80, 0xF0, 0x80, 0x80)
 
         digits = (digit0 + digit1 + digit2 + digit3 + digit4 + digit5 
-                + digit6 + digit7 + digit8 + digit9 + digitA + 
-                digits + digitB + digitC + digitD + digitE + digitF)
+                + digit6 + digit7 + digit8 + digit9 + digitA + digitB 
+                + digitC + digitD + digitE + digitF)
 
-        self.load_mem(Chip8.DIGIT_MEM_INDEX, digits)
+        self.load_mem(Chip.DIGIT_MEM_INDEX, digits)
 
     def load_mem(self, offset, vals):
         """load the values from an iterable into subsequent memory
@@ -384,12 +370,20 @@ class Chip:
     def SKP(self, reg):
         """instruction to skip the next instruction if the key corresponding
         to the value in a given register is pressed"""
-        pass;
+        key = self.regs[reg]
+        if self.keys[key]:
+            pc += 2;
+        else:
+            pc += 1;
 
     def SKNP(self, reg):
         """instruction to skip the next instruction if the key corresponding
         to the value in a given register is not pressed"""
-        pass;
+        key = self.regs[reg]
+        if not self.keys[key]:
+            pc += 2;
+        else:
+            pc += 1;
 
     def LDregdt(self, reg):
         """instruction to load the value in the delay timer into a 
@@ -400,7 +394,10 @@ class Chip:
     def LDkey(self, reg):
         """instruction to load the value of the next key press into a
         register"""
-        pass;
+        #TODO: should we check for a press or a change in state?
+        while not any(self.keys):
+            pass;
+        self.regs[reg] = self.keys.index(True)
 
     def LDdt(self, reg):
         """instruction to load the value from a register into the delay
@@ -462,7 +459,10 @@ class Chip:
 
 
 def main():
-    pass;
+    chip = Chip()
+    chip.LDkey(0)
+    print("success")
+    print(chip.regs[0])
 
 if __name__ == "__main__":
     main();
