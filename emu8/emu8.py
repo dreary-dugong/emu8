@@ -1,6 +1,10 @@
 import random;
 
-class chip:
+class Chip:
+    #class constants
+    DIGIT_MEM_INDEX = 0; #where in memory are the sprite reprs of digits
+
+
     def __init__(self):
 
         #memory
@@ -23,14 +27,72 @@ class chip:
                 #plays a sound as it decrmeents
 
         #display
-        load_display();
+        #this would be read by a driver class to display on screen
+        self.load_display();
+
+        #keys 
+        #these have to be set by a driver class
+        self.key0 = False
+        self.key1 = False
+        self.key2 = False
+        self.key3 = False
+        self.key4 = False
+        self.key5 = False
+        self.key6 = False
+        self.key7 = False
+        self.key8 = False
+        self.key9 = False
+        self.keyA = False
+        self.keyB = False
+        self.keyC = False
+        self.keyD = False
+        self.keyE = False
+        self.keyF = False
+
+        #initial memory values
+        self.load_digit_sprites();
         
-    def load_display():
+    def load_display(self):
         """load the display as an empty matrix"""
         #TODO: bigger display sizes? check roms for what they expect
         self.disp = [] #2D boolean matrix representing the 63 x 32 display
         for _ in range(64):
             disp.append([0]*32)
+
+    def load_digit_sprites(self):
+        """load the sprite reprentations of digits into memory for use
+        in drawing instructions"""
+
+        digit0 = (0xF0, 0x90, 0x90, 0x90, 0xF0)
+        digit1 = (0x20, 0x60, 0x20, 0x20, 0x70)
+        digit2 = (0xF0, 0x10, 0xF0, 0x80, 0xF0)
+        digit3 = (0xF0, 0x10, 0xF0, 0x10, 0xF0)
+        digit4 = (0x90, 0x90, 0xF0, 0x10, 0x10)
+        digit5 = (0xF0, 0x80, 0xF0, 0x10, 0xF0)
+        digit6 = (0xF0, 0x80, 0xF0, 0x90, 0xF0)
+        digit7 = (0xF0, 0x10, 0x20, 0x40, 0x40)
+        digit8 = (0xF0, 0x90, 0xF0, 0x90, 0xF0)
+        digit9 = (0xF0, 0x90, 0xF0, 0x10, 0xF0)
+        digitA = (0xF0, 0x90, 0xF0, 0x90, 0x90)
+        digitB = (0xE0, 0x90, 0xE0, 0x90, 0xE0)
+        digitC = (0xF0, 0x80, 0x80, 0x80, 0xF0)
+        digitD = (0xE0, 0x90, 0x90, 0x90, 0xE0)
+        digitE = (0xF0, 0x80, 0xF0, 0x80, 0xF0)
+        digitF = (0xF0, 0x80, 0xF0, 0x80, 0x80)
+
+        digits = (digit0 + digit1 + digit2 + digit3 + digit4 + digit5 
+                + digit6 + digit7 + digit8 + digit9 + digitA + 
+                digits + digitB + digitC + digitD + digitE + digitF)
+
+        self.load_mem(Chip8.DIGIT_MEM_INDEX, digits)
+
+    def load_mem(self, offset, vals):
+        """load the values from an iterable into subsequent memory
+        locations. This is just memcpy."""
+        index = offset
+        for val in vals:
+            self.mem[index] = val
+            index += 1
 
     def execute(inst):
         """execute a single 16-bit integer instruction on the chip"""
@@ -173,6 +235,7 @@ class chip:
     def CLS(self):
         """instruction to clear the display"""
         self.load_display();
+        self.pc += 1;
 
     def RET(self):
         """instruction to return from a subroutine"""
