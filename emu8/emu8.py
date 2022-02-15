@@ -5,6 +5,8 @@ class Chip:
     #class constants
     DIGIT_MEM_INDEX = 0; #where in memory are the sprite reprs of digits
     PROGRAM_MEM_INDEX = 512; #where is program space in memory
+    DISPLAY_X_MAX = 63; #one less than the width of the display
+    DISPLAY_Y_MAX = 31; #one less than the height of the display
 
 
     def __init__(self):
@@ -42,8 +44,8 @@ class Chip:
         """load the display as an empty matrix"""
         #TODO: bigger display sizes? check roms for what they expect
         self.disp = [] #2D boolean matrix representing the 63 x 32 display
-        for _ in range(64):
-            self.disp.append([0]*32)
+        for _ in range(Chip.DISPLAY_X_MAX + 1):
+            self.disp.append([0]*Chip.DISPLAY_Y_MAX+1)
 
     def load_digit_sprites(self):
         """load the sprite reprentations of digits into memory for use
@@ -79,6 +81,14 @@ class Chip:
         for val in vals:
             self.mem[index] = val
             index += 1
+
+    def display_byte(self, x, y, b):
+        """set 'pixels' in the display according to a byte"""
+        for i in range(8):
+            p = b & (1 << (7-i)) #isolate our bit
+            p = p >> (7-i) #shift our bit right for 1 or 0
+            self.disp[x+i][y] = True if p else False
+
 
     def execute(inst):
         """execute a single 16-bit integer instruction on the chip"""
@@ -363,9 +373,9 @@ class Chip:
         self.regs[reg] = r & b;
         self.pc += 1;
 
-    def DRW(self):
+    def DRW(self, reg1, reg2, nibble):
         """instruction to draw a sprite on the display"""
-        pass;
+        
 
     def SKP(self, reg):
         """instruction to skip the next instruction if the key corresponding
