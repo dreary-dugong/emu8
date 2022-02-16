@@ -4,6 +4,7 @@ import chip8
 from colorama import Back, Fore
 import os
 import argparse
+import keyboard
 
 def load_demo_3(chip):
     """load a simple 'hello, world' style program for testing"""
@@ -81,6 +82,12 @@ def load_file(f, chip):
 
     chip.load_program(program)
 
+def update_keys(chip):
+    """set the chip's keys according to what's pressed on the keyboard"""
+    keys = ("0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f")
+    for i, key in enumerate(keys): 
+        chip.keys[i] = keyboard.is_pressed(key)
+
 def get_screen(chip):
     """get a stylized text representation of the chip-8's display"""
 
@@ -144,6 +151,18 @@ def get_stylized_mem(chip):
     return ("\n" + "".join(valueRow) + "\n" + "".join(addrRow) + "\n" + 
             "".join(arrowRow))
 
+def get_stylized_keys(chip):
+    """return a stylized string representation of which keys are pressed on the chip"""
+    keys = ("0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f")
+    output = "\n"
+    for key, value in zip(keys, chip.keys):
+        if value:
+            output += (Back.WHITE + Fore.BLACK + key + Back.RESET + Fore.RESET + "\t")
+        else:
+            output += (key + "\t")
+
+    return output 
+
 def double_hex(n):
     """return a two digit hex representation of an integer"""
     h = hex(n)
@@ -162,16 +181,16 @@ def text_display(chip):
     """display an interface to the chip in the terminal"""
     os.system('clear')
     display = (get_screen(chip) + get_stylized_registers(chip) + 
-            get_stylized_mem(chip))
+            get_stylized_mem(chip) + get_stylized_keys(chip))
     print(display)
 
 def run_display(chip, rf):
-
     """run the program on the chip and display contents in the terminal"""
     currInst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc+1]
     while currInst != chip8.Chip.EXIT:
         currInst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc+1]
         for _ in range(rf):
+            update_keys(chip)
             chip.cycle()
         text_display(chip) 
 
