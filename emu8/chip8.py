@@ -86,6 +86,7 @@ class Chip:
             index += 1
 
     def display_byte(self, x, y, b):
+        print(f"Displaying byte {b} at {x=} {y=}")
         """set 'pixels' in the display according to a byte"""
         ow = False; #are we overwritiing a previous sprite?
         y = y % Chip.DISPLAY_Y_MAX
@@ -115,7 +116,7 @@ class Chip:
             self.cycle();
 
     def cycle(self):
-
+        """run a single instruction with proper timing"""
         inst = self.mem[self.pc]
 
         start = time.time();
@@ -417,7 +418,7 @@ class Chip:
 
     def DRW(self, reg1, reg2, n):
         """instruction to draw a sprite on the display"""
-        x, y = reg1, reg2
+        x, y = self.regs[reg1], self.regs[reg2]
         index = self.regI
         ow = False;
 
