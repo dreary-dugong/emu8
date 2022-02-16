@@ -315,8 +315,9 @@ class Chip:
 
         self.pc += 2;
 
-    def SHR(self, reg):
+    def SHR(self, reg, empty):
         """instruction to divide the value of a register by 2"""
+        #this is listed as taking two registers but it only operates on one
         self.regVF = self.regs[reg] % 2; #if it was odd, set the flag
         self.regs[reg] = self.regs[reg] // 2;
         self.pc += 2;
@@ -329,8 +330,10 @@ class Chip:
         self.regs[reg1] = self.regs[reg1] & 255; #limit to 8 bits
         self.pc += 2;
 
-    def SHL(self, reg):
+    def SHL(self, reg, empty):
         """instruction to multiply the value in a register by 2"""
+        #this is classified as taking two registers but only operates on
+        #one
         self.regVF = self.regs[reg] > 127; #set flag
         self.regs[reg] = self.regs[reg] * 2; #multiply
         self.regs[reg] = self.regs[reg] & 255; #limit to 8 bits

@@ -1,14 +1,14 @@
+#!/bin/python3
+
 import chip8
 from colorama import Back
 import os
+import argparse
 
-def program_test(chip):
+def load_demo_3(chip):
     """load a simple 'hello, world' style program for testing"""
     #the following should write a "3" to the display
     program = ( 
-            0x65, #load the value 16 into register 5, just to test
-            0xFF,
-
             0x62, #load the value 0 into register 2
             0x00,
             0x63, #load the value 0 into register 3
@@ -22,10 +22,9 @@ def program_test(chip):
             )
     chip.load_program(program)
 
-def load_animation(chip):
-    """load an animation program into the system for testing the display"""
-    
-    #the system should count up from 0 to F, then reset
+def load_demo_countdown(chip):
+    """load an countdown program into the chip for testing the display"""
+    #the chip should count up from 0 to F, then reset
     program = (
             #program constants
             0x62, #load the value 0 into register 2
@@ -71,6 +70,17 @@ def load_animation(chip):
             )
     chip.load_program(program)
 
+def load_file(f, chip):
+    """read a raw program in from a file and load it into the chip"""
+
+    program = []
+    with open(f, 'rb') as file:
+        for byteArray in file:
+            for byte in byteArray:
+                program.append(byte)
+
+    chip.load_program(program)
+
 def get_screen(chip):
     """get a stylized text representation of the chip-8's display"""
 
@@ -106,23 +116,55 @@ def get_stylized_registers(chip):
 
     return output
 
-
 def text_display(chip):
     """display an interface to the chip in the terminal"""
     os.system('clear')
     display = get_screen(chip) + get_stylized_registers(chip)
     print(display)
 
+def run_display(chip):
+    """run the program on the chip and display contents in the terminal"""
+    currInst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc+1]
+    while currInst != chip8.Chip.EXIT:
+        currInst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc+1]
+        for _ in range(10):
+            chip.cycle()
+        text_display(chip) 
+
+def init_argparse():
+    """create an argument parser"""
+    parser = argparse.ArgumentParser(
+            usage="%(prog)s [OPTION] | [FILE]",
+            description="Run a specified chip8 program or an included demo.",
+            )
+    parser.add_argument(
+            "-c","--countdown",action="store_true", 
+            help="Run the Countodown Demo"
+            )
+    parser.add_argument(
+            "-3", "--three",action="store_true",help="Run the 3 demo."
+            )
+    parser.add_argument("-r", "--run", help="Run the prvoided program.")
+
+    return parser
 
 def main():
-    """run our countdown program and display in the terminal"""
-    chip = chip8.Chip()
-    load_animation(chip)
-    while True:
-        for i in range(10): #update the screen every 10 cycles
-            chip.cycle()
-        text_display(chip)
+    parser = init_argparse()
+    args = parser.parse_args()
 
+    chip = chip8.Chip()
+
+    if args.three:
+        load_demo_3(chip)
+        run_display(chip)
+    elif args.countdown:
+        load_demo_countdown(chip)
+        run_display(chip)
+    elif args.run:
+        load_file(args.run, chip)
+        run_display(chip)
+    else:
+        print("incorrect arguments")
 
 if __name__ == "__main__":
     main()
