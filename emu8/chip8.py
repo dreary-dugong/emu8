@@ -409,10 +409,11 @@ class Chip:
         """instruction to load the value of the next key press into a
         register"""
         #TODO: should we check for a press or a change in state?
-        while not any(self.keys):
-            pass;
-        self.regs[reg] = self.keys.index(True);
-        self.pc += 2;
+        if not any(self.keys): #do nothing, let it be reexeucted
+            return;
+        else:
+            self.regs[reg] = self.keys.index(True);
+            self.pc += 2;
 
     def LDdt(self, reg):
         """instruction to load the value from a register into the delay
