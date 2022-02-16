@@ -98,6 +98,9 @@ class Chip:
 
         return ow
 
+    def run():
+        while(inst := self.mem[self.pc]):
+            self.execute(inst);
 
     def execute(inst):
         """execute a single 16-bit integer instruction on the chip"""
