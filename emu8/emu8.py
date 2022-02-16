@@ -1,7 +1,7 @@
 #!/bin/python3
 
 import chip8
-from colorama import Back
+from colorama import Back, Fore
 import os
 import argparse
 
@@ -111,7 +111,7 @@ def get_stylized_registers(chip):
     for i in range(4):
         for j in range(4):
             n = j + 4*i
-            output += f"r{hex(n)[2]}:\t{hex(chip.regs[n])} \t"
+            output += f"r{hex(n)[2]}:  {double_hex(chip.regs[n])} \t"
         output += "\n"
 
     output += "\n"
@@ -121,10 +121,48 @@ def get_stylized_registers(chip):
 
     return output
 
+def get_stylized_mem(chip):
+    """return a stylized string representation of the chip's  memory"""
+    distance = 12 #distance away from the program counter to display
+
+    valueRow = [] #row of values in memory
+    addrRow = [] #row of memory addresses
+    arrowRow = [] #row with an arrow to the current instruction
+
+    for i in range(chip.pc-distance, chip.pc+distance):
+        if i >= 0 and i < len(chip.mem):
+            valueRow.append(double_hex(chip.mem[i]) + "  ")
+        else:
+            valueRow.append(double_hex(0) + "  ")
+        addrRow.append(triple_hex(i) + " ")
+        
+        if i == chip.pc:
+            arrowRow.append(Fore.BLUE + "^" + Fore.RESET)
+        else:
+            arrowRow.append("     ")
+
+    return ("\n" + "".join(valueRow) + "\n" + "".join(addrRow) + "\n" + 
+            "".join(arrowRow))
+
+def double_hex(n):
+    """return a two digit hex representation of an integer"""
+    h = hex(n)
+    if len(h) == 3:
+        h = h[:2] + "0" + h[2]
+    return h
+
+def triple_hex(n):
+    """return a three digit hex representation of an integer"""
+    h = double_hex(n)
+    if len(h) == 4:
+        h = h[:2] + "0" + h[2:]
+    return h
+
 def text_display(chip):
     """display an interface to the chip in the terminal"""
     os.system('clear')
-    display = get_screen(chip) + get_stylized_registers(chip)
+    display = (get_screen(chip) + get_stylized_registers(chip) + 
+            get_stylized_mem(chip))
     print(display)
 
 def run_display(chip):
