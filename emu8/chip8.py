@@ -263,10 +263,10 @@ class Chip:
         self.regs[reg] = val;
         self.pc += 2;
 
-    #TODO: should this account for a carry/8-bit limit?
+    #TODO: should this account for a carry?
     def ADDval(self, reg, val):
         """instruction to add a value to a register"""
-        self.regs[reg] = self.regs[reg] + val;
+        self.regs[reg] = (self.regs[reg] + val) & 255;
         self.pc += 2;
 
     def LDreg(self, reg1, reg2):
