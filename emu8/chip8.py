@@ -4,6 +4,7 @@ import time;
 #TODO: INSTRUCTIONS ARE 2 BYTES EACH, WE'RE ACTING LIKE THEY'RE ONE
 class Chip:
     #class constants
+    CLOCK_SPEED = 500; #default clock speed in Hz
     DIGIT_MEM_INDEX = 0; #where in memory are the sprite reprs of digits
     PROGRAM_MEM_INDEX = 512; #where is program space in memory
     RAM_SIZE = 4096; #total bytes of ram
@@ -45,6 +46,9 @@ class Chip:
 
         #number of cycles run so far, used for timing
         self.cycleCount = 0;
+
+        #set clock speed to default
+        self.clockSpeed = Chip.CLOCK_SPEED;
         
     def load_display(self):
         """load the display as an empty matrix"""
@@ -129,7 +133,7 @@ class Chip:
         end = time.time();
 
         elapsed = end - start;
-        time.sleep(0.002-elapsed);
+        time.sleep((1/self.clockSpeed)-elapsed);
         self.cycleCount += 1
 
         if(self.cycleCount % 8 == 0):
@@ -287,6 +291,7 @@ class Chip:
         """instruction to return from a subroutine"""
         self.pc = self.stack[self.sp];
         self.sp -= 1;
+        self.pc += 2; 
 
     def JP(self, addr):
         """instruction to jump to addresss addr"""
