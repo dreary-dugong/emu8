@@ -1,6 +1,6 @@
 import random;
+import time;
 
-#TODO: implement countdown, display
 class Chip:
     #class constants
     DIGIT_MEM_INDEX = 0; #where in memory are the sprite reprs of digits
@@ -97,10 +97,30 @@ class Chip:
             self.disp[currx][y] = True if p else False
 
         return ow
+    
+    def load_program(self, vals):
+        """exposed method for loading a program into memory"""
+        index = Chip.PROGRAM_MEM_INDEX
+        for val in vals:
+            self.mem[index] = val;
 
-    def run():
+    def run(self):
+        """run all instructions in program memory"""
+        #TODO: for now, we treat 0 as exit. Is that correct?
+        timerCount = 0
         while(inst := self.mem[self.pc]):
+            start = time.time();
             self.execute(inst);
+            end = time.time();
+            elapsed = end - start;
+            time.sleep(0.002-elapsed);
+            timerCount += 1
+
+            if(timerCount > 8):
+                timerCount = 0;
+                self.dt = math.max(0, self.dt-1);
+                self.st = math.max(0, self.st-1);
+            
 
     def execute(inst):
         """execute a single 16-bit integer instruction on the chip"""
