@@ -190,6 +190,9 @@ def init_argparse():
     parser.add_argument("-r", "--run", metavar='file', 
             help="run the prvoided program"
             )
+    parser.add_argument("-cs", "--clockspeed", metavar='speed',
+            type=int, help="set the clock speed in Hz (default 500)",
+            default=500)
 
     return parser
 
@@ -202,12 +205,15 @@ def main():
 
     if args.three:
         load_demo_3(chip)
+        chip.clockSpeed = args.clockspeed
         run_display(chip)
     elif args.count:
         load_demo_count(chip)
+        chip.clockSpeed = args.clockspeed
         run_display(chip)
     elif args.run:
         load_file(args.run, chip)
+        chip.clockSpeed = args.clockspeed
         run_display(chip)
     else:
         print("incorrect arguments, use --help for help")
