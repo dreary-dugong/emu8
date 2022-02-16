@@ -1,7 +1,6 @@
 import random;
 import time;
 
-#TODO: INSTRUCTIONS ARE 2 BYTES EACH, WE'RE ACTING LIKE THEY'RE ONE
 class Chip:
     #class constants
     CLOCK_SPEED = 500; #default clock speed in Hz
@@ -111,6 +110,7 @@ class Chip:
     def load_program(self, vals):
         """exposed method for loading a program into memory"""
         self.__init__(); #reset everything
+                        #TODO: this resets clock speed, maybe it shouldn't
         index = Chip.PROGRAM_MEM_INDEX
         for val in vals:
             self.mem[index] = val;
@@ -119,7 +119,7 @@ class Chip:
     def run(self):
         """run all instructions in program memory"""
         #TODO: for now, we treat 0 as exit. Is that correct?
-        while(self.mem[self.pc]):
+        while(self.mem[self.pc] != Chip.EXIT):
             self.cycle();
 
     def cycle(self):
@@ -136,141 +136,74 @@ class Chip:
         time.sleep((1/self.clockSpeed)-elapsed);
         self.cycleCount += 1
 
+        #decrement timers every 8 cycles. This is ~60Hz when
+        #clock speed is 500 Hz
         if(self.cycleCount % 8 == 0):
             self.dt = max(0, self.dt-1);
             self.st = max(0, self.st-1);
 
     def execute(self, inst):
         """execute a single 16-bit integer instruction on the chip"""
-        #TODO: refactor to use dictionaries and first class functions
+        #TODO: is it worthwhile to save the decoder dictionaries as instance
+        #data so we don't reload them every cycle?
 
         #if we're at an exit code, don't do anything
         if(inst == Chip.EXIT):
             return;
 
         #instructions with no params
-        if inst == 0x00E0:
-            self.CLS();
-            return;
-        elif inst == 0x00EE:
-            self.RET();
-            return;
+        no_params = {0x00E0:self.CLS, 0x00EE:self.RET}
+        if inst in no_params:
+            no_params[inst]()
+            return
 
         #instructions with a single 12 bit param (address)
-        prefix = inst >> 12; #first 4 bits encode instruction type
-        addr = inst & 0x0FFF; #last 12 bits encode param
-        if prefix == 0x1:
-            self.JP(addr);
-            return;
-        elif prefix == 0x2:
-            self.CALL(addr);
-            return;
-        elif prefix == 0xA:
-            self.LDI(addr);
-            return;
-        elif prefix == 0xB:
-            self.JP0(addr);
-            return;
+        prefix = inst >> 12 #first 4 bits encode instruction type
+        addr = inst & 0x0FFF #last 12 bits encode param
+
+        addr_param = {0x1:self.JP, 0x2:self.CALL, 0xA:self.LDI, 0xB:self.JP0}
+        if prefix in addr_param:
+            addr_param[prefix](addr)
+            return
 
         #instructions with a 4-bit param (register) and 8-bit param (literal)
         reg = addr >> 8; #middle 4 bits encode register
         val = addr & 0x0FF; #last 8 bits encode literal byte
-        if prefix == 0x3:
-            self.SEval(reg, val);
-            return;
-        elif prefix == 0x4:
-            self.SNEval(reg, val);
-            return;
-        elif prefix == 0x6:
-            self.LDval(reg, val);
-            return;
-        elif prefix == 0x7:
-            self.ADDval(reg, val);
-            return;
-        elif prefix == 0xC:
-            self.RND(reg, val);
+
+        reg_val_params = {0x3:self.SEval, 0x4:self.SNEval, 0x6:self.LDval,
+                0x7:self.ADDval, 0xC:self.RND}
+        if prefix in reg_val_params:
+            reg_val_params[prefix](reg, val)
             return;
 
         #instructions with a single 4-bit param (register)
-        postfix = val;
-        if prefix == 0xE:
-            if postfix == 0x9E:
-                self.SKP(reg);
-                return;
-            elif postfix == 0xA1:
-                self.SKNP(reg);
-                return;
-        elif prefix == 0xF:
-            if postfix == 0x07:
-                self.LDregdt(reg);
-                return;
-            elif postfix == 0x0A:
-                self.LDkey(reg);
-                return;
-            elif postfix == 0x15:
-                self.LDdt(reg);
-                return;
-            elif postfix == 0x18:
-                self.LDst(reg);
-                return;
-            elif postfix == 0x1E:
-                self.ADDi(reg);
-                return;
-            elif postfix == 0x29:
-                self.LDdigit(reg);
-                return;
-            elif postfix == 0x33:
-                self.LDbcd(reg);
-                return;
-            elif postfix == 0x55:
-                self.LDmemreg(reg);
-                return;
-            elif postfix == 0x65:
-                self.LDregmem(reg);
-                return;
+        postfix = val; #what was a literal value before is now a postfix
+        reg_params = {(0xE,0x9E):self.SKP, (0xE,0xA1):self.SKNP, 
+                (0xF,0x07):self.LDregdt, (0xF,0x0A):self.LDkey,
+                (0xF,0x15):self.LDdt, (0xF,0x18):self.LDst, 
+                (0xF,0x1E):self.ADDi, (0xF,0x29):self.LDdigit,
+                (0xF,0x33):self.LDbcd, (0xF,0x55):self.LDmemreg,
+                (0xF,0x65):self.LDregmem}
+
+        if (prefix, postfix) in reg_params:
+            reg_params[(prefix,postfix)](reg)
+            return;
 
         #instructions with two 4-bit parameters (registers)
         reg1 = reg #rename since there's now 2 registers
         reg2 = postfix >> 4 #second param is third set of 4 bits
-        postfix = postfix & 0x0F; #now there's an extra 4 bits on the end
-        
-        if prefix == 0x5:
-            if postfix == 0x0:
-                self.SEreg(reg1, reg2);
-                return;
-        elif prefix == 0x8:
-            if postfix == 0x0:
-                self.LDreg(reg1, reg2);
-                return;
-            elif postfix == 0x1:
-                self.OR(reg1, reg2);
-                return;
-            elif postfix == 0x2:
-                self.AND(reg1, reg2);
-                return;
-            elif postfix == 0x3:
-                self.XOR(reg1, reg2);
-                return;
-            elif postfix == 0x4:
-                self.ADDreg(reg1, reg2);
-                return;
-            elif posfix == 0x5:
-                self.SUB(reg1, reg2);
-                return;
-            elif postfix == 0x6:
-                self.SHR(reg1); #this is weird but it's in the spec
-                return;
-            elif postfix == 0x7:
-                self.SUBN(reg1, reg2);
-                return;
-            elif postfix == 0xE:
-                self.SHL(reg1); #another weird one
-                return;
+        postfix = postfix & 0x0F; #now the postfix is only 4 bits
 
-        elif prefix == 9:
-            if postfix == 0:
-                self.SNEreg(reg1, reg2);
-                return;
+        reg_reg_params = {(0x5,0x0):self.SEreg, (0x8,0x0):self.LDreg,
+                (0x8,0x2):self.AND, (0x8,0x3):self.XOR,
+                (0x8,0x4):self.ADDreg, (0x8,0x5):self.SUB,
+                (0x8,0x6):self.SHR, (0x8,0x7):self.SUBN,
+                (0x8,0xE):self.SHL, (0x8,0x1):self.OR, 
+                (0x9,0x0):self.SNEreg}
+        
+        if (prefix,postfix) in reg_reg_params:
+            reg_reg_params[(prefix,postfix)](reg1, reg2)
+            return
 
         #instructions with 3 4-bit parameters (two registers, one 'nibble')
         nibble = postfix;
@@ -279,7 +212,7 @@ class Chip:
             return;
         
         #if it hasn't been decoded yet, it doesn't exist
-        raise(f"Bad instruction: {inst}")
+        raise(Exception(f"Bad instruction: {inst}"))
 
 
     def CLS(self):
