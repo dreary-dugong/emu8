@@ -84,10 +84,19 @@ class Chip:
 
     def display_byte(self, x, y, b):
         """set 'pixels' in the display according to a byte"""
+        ow = False; #are we overwritiing a previous sprite?
+        y = y % Chip.DISPLAY_MAX_Y
+
         for i in range(8):
             p = b & (1 << (7-i)) #isolate our bit
-            p = p >> (7-i) #shift our bit right for 1 or 0
-            self.disp[x+i][y] = True if p else False
+            p = p >> (7-i) #shift our bit all the way right for 1 or 0
+            currx = (x + i) % Chip.DISPLAY_MAX_X #wrap around
+
+            if not p and self.disp[currx][y]:
+                ow = True
+            self.disp[currx][y] = True if p else False
+
+        return ow
 
 
     def execute(inst):
@@ -373,9 +382,22 @@ class Chip:
         self.regs[reg] = r & b;
         self.pc += 1;
 
-    def DRW(self, reg1, reg2, nibble):
+    def DRW(self, reg1, reg2, n):
         """instruction to draw a sprite on the display"""
-        
+        x, y = reg1, reg2
+        index = self.regI
+        ow = False;
+
+        for i in range(n):
+            b = self.mem[index]
+            if self.display_byte(x, y + i, b):
+                ow = True;
+            index += 1
+
+        if ow:
+            self.regVF = 1;
+
+        self.pc += 1;
 
     def SKP(self, reg):
         """instruction to skip the next instruction if the key corresponding
@@ -407,7 +429,8 @@ class Chip:
         #TODO: should we check for a press or a change in state?
         while not any(self.keys):
             pass;
-        self.regs[reg] = self.keys.index(True)
+        self.regs[reg] = self.keys.index(True);
+        self.pc += 1;
 
     def LDdt(self, reg):
         """instruction to load the value from a register into the delay
@@ -430,7 +453,10 @@ class Chip:
     def LDdigit(self, reg):
         """instruction to set the I register to the memory address of the
         sprite for the value in a given register"""
-        pass;
+        val = self.regs[reg];
+        self.regI = Chip.DIGIT_MEM_INDEX + 5*val;
+        self.pc += 1;
+
 
     def LDbcd(self, reg):
         """instruction to store the decimal representation of the value in
