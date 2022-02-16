@@ -22,8 +22,8 @@ def load_demo_3(chip):
             )
     chip.load_program(program)
 
-def load_demo_countdown(chip):
-    """load an countdown program into the chip for testing the display"""
+def load_demo_count(chip):
+    """load an counting program into the chip for testing the display"""
     #the chip should count up from 0 to F, then reset
     program = (
             #program constants
@@ -111,8 +111,13 @@ def get_stylized_registers(chip):
     for i in range(4):
         for j in range(4):
             n = j + 4*i
-            output += f"r{hex(n)[2]}:\t{hex(chip.regs[n])}  \t"
+            output += f"r{hex(n)[2]}:\t{hex(chip.regs[n])} \t"
         output += "\n"
+
+    output += "\n"
+    output += f"I:{hex(chip.regI)}\t\t\t"
+    output += f"dt:{hex(chip.dt)}\t\t\t"
+    output += f"st:{hex(chip.st)}\n"
 
     return output
 
@@ -134,21 +139,24 @@ def run_display(chip):
 def init_argparse():
     """create an argument parser"""
     parser = argparse.ArgumentParser(
-            usage="%(prog)s [OPTION] | [FILE]",
+            usage="%(prog)s [OPTION] (FILE)",
             description="Run a specified chip8 program or an included demo.",
             )
     parser.add_argument(
-            "-c","--countdown",action="store_true", 
-            help="Run the Countodown Demo"
+            "-c","--count",action="store_true", 
+            help="run the count demo"
             )
     parser.add_argument(
-            "-3", "--three",action="store_true",help="Run the 3 demo."
+            "-3", "--three",action="store_true", help="run the 3 demo"
             )
-    parser.add_argument("-r", "--run", help="Run the prvoided program.")
+    parser.add_argument("-r", "--run", metavar='file', 
+            help="run the prvoided program"
+            )
 
     return parser
 
 def main():
+    """run a program on the chip8 depending on specified arguments"""
     parser = init_argparse()
     args = parser.parse_args()
 
@@ -157,14 +165,14 @@ def main():
     if args.three:
         load_demo_3(chip)
         run_display(chip)
-    elif args.countdown:
-        load_demo_countdown(chip)
+    elif args.count:
+        load_demo_count(chip)
         run_display(chip)
     elif args.run:
         load_file(args.run, chip)
         run_display(chip)
     else:
-        print("incorrect arguments")
+        print("incorrect arguments, use --help for help")
 
 if __name__ == "__main__":
     main()
