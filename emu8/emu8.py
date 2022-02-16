@@ -165,12 +165,13 @@ def text_display(chip):
             get_stylized_mem(chip))
     print(display)
 
-def run_display(chip):
+def run_display(chip, rf):
+
     """run the program on the chip and display contents in the terminal"""
     currInst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc+1]
     while currInst != chip8.Chip.EXIT:
         currInst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc+1]
-        for _ in range(10):
+        for _ in range(rf):
             chip.cycle()
         text_display(chip) 
 
@@ -193,6 +194,9 @@ def init_argparse():
     parser.add_argument("-cs", "--clockspeed", metavar='speed',
             type=int, help="set the clock speed in Hz (default 500)",
             default=500)
+    parser.add_argument("-rf", "--refreshrate", metavar="cycles",
+            type=int, default=10, help="""set the number of cycles between
+            screen refreshes (default 10)""")
 
     return parser
 
@@ -206,15 +210,15 @@ def main():
     if args.three:
         load_demo_3(chip)
         chip.clockSpeed = args.clockspeed
-        run_display(chip)
+        run_display(chip, args.refreshrate)
     elif args.count:
         load_demo_count(chip)
         chip.clockSpeed = args.clockspeed
-        run_display(chip)
+        run_display(chip, args.refreshrate)
     elif args.run:
         load_file(args.run, chip)
         chip.clockSpeed = args.clockspeed
-        run_display(chip)
+        run_display(chip, args.refreshrate)
     else:
         print("incorrect arguments, use --help for help")
 
