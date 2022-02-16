@@ -133,8 +133,8 @@ class Chip:
         self.cycleCount += 1
 
         if(self.cycleCount % 8 == 0):
-            self.dt = math.max(0, self.dt-1);
-            self.st = math.max(0, self.st-1);
+            self.dt = max(0, self.dt-1);
+            self.st = max(0, self.st-1);
 
     def execute(self, inst):
         """execute a single 16-bit integer instruction on the chip"""
@@ -285,7 +285,7 @@ class Chip:
 
     def RET(self):
         """instruction to return from a subroutine"""
-        self.pc = stack[sp];
+        self.pc = self.stack[self.sp];
         self.sp -= 1;
 
     def JP(self, addr):
@@ -295,12 +295,12 @@ class Chip:
     def CALL(self, addr):
         """instruction to call a subroutine at address addr"""
         self.sp += 1;
-        self.stack[sp] = pc;
+        self.stack[self.sp] = self.pc;
         self.pc = addr;
 
     def SEval(self, reg, val):
         """instruction to skip the next instruction if a register is val"""
-        if regs[reg] == val:
+        if self.regs[reg] == val:
             self.pc += 4;
         else:
             self.pc += 2;
