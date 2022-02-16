@@ -1,18 +1,21 @@
 import random;
 import time;
 
+#TODO: INSTRUCTIONS ARE 2 BYTES EACH, WE'RE ACTING LIKE THEY'RE ONE
 class Chip:
     #class constants
     DIGIT_MEM_INDEX = 0; #where in memory are the sprite reprs of digits
     PROGRAM_MEM_INDEX = 512; #where is program space in memory
+    RAM_SIZE = 4096; #total bytes of ram
     DISPLAY_X_MAX = 63; #one less than the width of the display
     DISPLAY_Y_MAX = 31; #one less than the height of the display
+    EXIT = 0; #instruction that ends program execution
 
 
     def __init__(self):
 
         #memory
-        self.mem = [0] * 4096; #main memory, each entry is one byte
+        self.mem = [0] * Chip.RAM_SIZE; #main memory, each entry is one byte
         self.pc = Chip.PROGRAM_MEM_INDEX; #program counter
 
         #registers
@@ -86,7 +89,6 @@ class Chip:
             index += 1
 
     def display_byte(self, x, y, b):
-        print(f"Displaying byte {b} at {x=} {y=}")
         """set 'pixels' in the display according to a byte"""
         ow = False; #are we overwritiing a previous sprite?
         y = y % Chip.DISPLAY_Y_MAX
@@ -104,6 +106,7 @@ class Chip:
     
     def load_program(self, vals):
         """exposed method for loading a program into memory"""
+        self.__init__(); #reset everything
         index = Chip.PROGRAM_MEM_INDEX
         for val in vals:
             self.mem[index] = val;
@@ -112,12 +115,14 @@ class Chip:
     def run(self):
         """run all instructions in program memory"""
         #TODO: for now, we treat 0 as exit. Is that correct?
-        while(inst := self.mem[self.pc]):
+        while(self.mem[self.pc]):
             self.cycle();
 
     def cycle(self):
         """run a single instruction with proper timing"""
-        inst = self.mem[self.pc]
+        inst = self.mem[self.pc] #first byte
+        inst = inst << 8 #shift over to make room for second byte
+        inst = inst + self.mem[self.pc+1] #add second byte
 
         start = time.time();
         self.execute(inst);
@@ -132,9 +137,12 @@ class Chip:
             self.st = math.max(0, self.st-1);
 
     def execute(self, inst):
-        print(f"Executing instruction {inst}")
         """execute a single 16-bit integer instruction on the chip"""
         #TODO: refactor to use dictionaries and first class functions
+
+        #if we're at an exit code, don't do anything
+        if(inst == Chip.EXIT):
+            return;
 
         #instructions with no params
         if inst == 0x00E0:
@@ -273,7 +281,7 @@ class Chip:
     def CLS(self):
         """instruction to clear the display"""
         self.load_display();
-        self.pc += 1;
+        self.pc += 2;
 
     def RET(self):
         """instruction to return from a subroutine"""
@@ -293,56 +301,55 @@ class Chip:
     def SEval(self, reg, val):
         """instruction to skip the next instruction if a register is val"""
         if regs[reg] == val:
-            self.pc += 2;
+            self.pc += 4;
         else:
-            self.pc += 1;
+            self.pc += 2;
 
     def SNEval(self, reg, val):
         """instruction to skip the next instruction if reg is not val"""
         if self.regs[reg] != val:
-            self.pc += 2;
+            self.pc += 4;
         else:
-            self.pc += 1;
+            self.pc += 2;
 
     def SEreg(self, reg1, reg2):
         """instruction to skip to the next instruction if the value in
         reg 1 is the same as the value in reg 2"""
         if self.regs[reg1] == self.regs[reg2]:
-            self.pc += 2;
+            self.pc += 4;
         else:
-            self.pc += 1;
+            self.pc += 2;
 
     def LDval(self, reg, val):
         """instruction to load a value into a register"""
-        print(f"Loaded value {val} into register {reg}")
         self.regs[reg] = val;
-        self.pc += 1;
+        self.pc += 2;
 
     #TODO: should this account for a carry/8-bit limit?
     def ADDval(self, reg, val):
         """instruction to add a value to a register"""
         self.regs[reg] = self.regs[reg] + val;
-        self.pc += 1;
+        self.pc += 2;
 
     def LDreg(self, reg1, reg2):
         """instruction to load the value from one register into another"""
         self.regs[reg1] = self.regs[reg2];
-        self.pc += 1;
+        self.pc += 2;
 
     def OR(self, reg1, reg2):
         """instruction to bitwise or two registers and store the result"""
         self.regs[reg1] = self.regs[reg1] | self.regs[reg2];
-        self.pc += 1;
+        self.pc += 2;
 
     def AND(self, reg1, reg2):
         """instruction to bitwise and two registers and store the result"""
         self.regs[reg1] = self.regs[reg1] & self.regs[reg2];
-        self.pc += 1;
+        self.pc += 2;
 
     def XOR(self, reg1, reg2):
         """instruction to bitwise xor two registers and store the result"""
         self.regs[reg1] = self.regs[reg1] ^ self.regs[reg2];
-        self.pc += 1;
+        self.pc += 2;
 
     def ADDreg(self, reg1, reg2):
         """instruction to add the values in two registers and store the 
@@ -355,7 +362,7 @@ class Chip:
         else:
             self.regVF = 0; 
 
-        self.pc += 1;
+        self.pc += 2;
 
     def SUB(self, reg1, reg2):
         """instruction to subtract the value of one register from another"""
@@ -368,13 +375,13 @@ class Chip:
         self.regs[reg1] = self.regs[reg1] & 255; 
             #apparently this fixes unsigned 8-bit subtraction
 
-        self.pc += 1;
+        self.pc += 2;
 
     def SHR(self, reg):
         """instruction to divide the value of a register by 2"""
         self.regVF = self.regs[reg] % 2; #if it was odd, set the flag
         self.regs[reg] = self.regs[reg] // 2;
-        self.pc += 1;
+        self.pc += 2;
     
     def SUBN(self, reg1, reg2):
         """instruction to subtract the value of one register from another
@@ -382,27 +389,27 @@ class Chip:
         self.regVF = self.regs[reg2] > self.regs[reg1]; #set flag?
         self.regs[reg1] = self.regs[reg2] - self.regs[reg1]; #subtract
         self.regs[reg1] = self.regs[reg1] & 255; #limit to 8 bits
-        self.pc += 1;
+        self.pc += 2;
 
     def SHL(self, reg):
         """instruction to multiply the value in a register by 2"""
         self.regVF = self.regs[reg] > 127; #set flag
         self.regs[reg] = self.regs[reg] * 2; #multiply
         self.regs[reg] = self.regs[reg] & 255; #limit to 8 bits
-        self.pc += 1;
+        self.pc += 2;
 
     def SNEreg(self, reg1, reg2):
         """instruction to skip the next instruction if two registers
         are not equal"""
         if self.regs[reg1] != self.regs[reg2]:
-            self.pc += 2;
+            self.pc += 4;
         else:
-            self.pc += 1;
+            self.pc += 2;
 
     def LDI(self, addr):
         """insruction to set the I register to a given address"""
         self.regI = addr;
-        self.pc += 1;
+        self.pc += 2;
 
     def JP0(self, addr):
         """instruction to jump to the instruction at addr + the value
@@ -414,7 +421,7 @@ class Chip:
         byte and store the result"""
         r = random.randint(0,255);
         self.regs[reg] = r & b;
-        self.pc += 1;
+        self.pc += 2;
 
     def DRW(self, reg1, reg2, n):
         """instruction to draw a sprite on the display"""
@@ -431,31 +438,31 @@ class Chip:
         if ow:
             self.regVF = 1;
 
-        self.pc += 1;
+        self.pc += 2;
 
     def SKP(self, reg):
         """instruction to skip the next instruction if the key corresponding
         to the value in a given register is pressed"""
         key = self.regs[reg]
         if self.keys[key]:
-            pc += 2;
+            pc += 4;
         else:
-            pc += 1;
+            pc += 2;
 
     def SKNP(self, reg):
         """instruction to skip the next instruction if the key corresponding
         to the value in a given register is not pressed"""
         key = self.regs[reg]
         if not self.keys[key]:
-            pc += 2;
+            pc += 4;
         else:
-            pc += 1;
+            pc += 2;
 
     def LDregdt(self, reg):
         """instruction to load the value in the delay timer into a 
         register"""
         self.regs[reg] = self.dt;
-        self.pc += 1;
+        self.pc += 2;
 
     def LDkey(self, reg):
         """instruction to load the value of the next key press into a
@@ -464,32 +471,32 @@ class Chip:
         while not any(self.keys):
             pass;
         self.regs[reg] = self.keys.index(True);
-        self.pc += 1;
+        self.pc += 2;
 
     def LDdt(self, reg):
         """instruction to load the value from a register into the delay
         timer"""
         self.dt = self.regs[reg];
-        self.pc += 1;
+        self.pc += 2;
 
     def LDst(self, reg):
         """instruction to load the value from a register into the sound
         timer"""
         self.st = self.regs[reg];
-        self.pc += 1;
+        self.pc += 2;
 
     def ADDi(self, reg):
         """instruction to add the value in a register to the I register"""
         self.regI += self.regs[reg];
         self.regI = self.regI & (2**12-1) #maintain 12 bits
-        self.pc += 1;
+        self.pc += 2;
 
     def LDdigit(self, reg):
         """instruction to set the I register to the memory address of the
         sprite for the value in a given register"""
         val = self.regs[reg];
         self.regI = Chip.DIGIT_MEM_INDEX + 5*val;
-        self.pc += 1;
+        self.pc += 2;
 
 
     def LDbcd(self, reg):
@@ -507,7 +514,7 @@ class Chip:
         self.mem[self.regI+1] = tens;
         self.mem[self.regI+2] = ones;
 
-        self.pc += 1;
+        self.pc += 2;
 
     def LDmemreg(self, reg):
         """instruction to store the values in registers 0 - x in memory
@@ -516,7 +523,7 @@ class Chip:
         for r in range(0, reg+1): #TODO: are we sure this should be inclusive?
             self.mem[loc] = self.regs[r];
             loc += 1;
-        self.pc += 1;
+        self.pc += 2;
 
     def LDregmem(self, reg):
         """instruction to load values from memory starting at the address
@@ -525,13 +532,12 @@ class Chip:
         for r in range(0, reg+1): #TODO: are we sure this should be inclusive?
             self.regs[r] = self.mem[loc];
             loc += 1;
-        self.pc += 1;
+        self.pc += 2;
 
 
 def main():
     chip = Chip()
     chip.LDkey(0)
-    print("success")
     print(chip.regs[0])
 
 if __name__ == "__main__":
