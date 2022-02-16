@@ -386,18 +386,18 @@ class Chip:
         to the value in a given register is pressed"""
         key = self.regs[reg]
         if self.keys[key]:
-            pc += 4;
+            self.pc += 4;
         else:
-            pc += 2;
+            self.pc += 2;
 
     def SKNP(self, reg):
         """instruction to skip the next instruction if the key corresponding
         to the value in a given register is not pressed"""
         key = self.regs[reg]
         if not self.keys[key]:
-            pc += 4;
+            self.pc += 4;
         else:
-            pc += 2;
+            self.pc += 2;
 
     def LDregdt(self, reg):
         """instruction to load the value in the delay timer into a 
