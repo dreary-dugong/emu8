@@ -6,8 +6,6 @@ authors = ["Daniel Gysi <danielgysi@protonmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-keyboard = "^0.13.5"
-colorama = "^0.4.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

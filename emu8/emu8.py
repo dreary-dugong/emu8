@@ -1,10 +1,16 @@
-#!/bin/python3
-
 import chip8
-from colorama import Back, Fore
-import os
+import tui8
 import argparse
-import keyboard
+import curses
+
+
+def press(key):
+    print(f"Pressed: {key}")
+
+
+def release(key):
+    print(f"Released: {key}")
+    return False
 
 
 def load_demo_3(chip):
@@ -82,7 +88,7 @@ def load_file(f, chip):
     chip.load_program(program)
 
 
-def update_keys(chip):
+def update_keys(chip, tui, currPress):
     """set the chip's keys according to what's pressed on the keyboard"""
     keys = (
         "0",
@@ -102,142 +108,37 @@ def update_keys(chip):
         "e",
         "f",
     )
+    press = tui.inputWin.getch()
+
+    # we account for a timeout becuase getch fails if it's called too quickly
+    if press == -1:
+        currPress[1] = currPress[1] - 1
+    elif currPress[0] == chr(press):
+        currPress[1] = 150
+    else:
+        currPress[0] = chr(press)
+        currPress[1] = 150
+
+    if currPress[1] == 0:
+        currPress[0] = ""
+
+    # update chip keys based on what's pressed
     for i, key in enumerate(keys):
-        chip.keys[i] = keyboard.is_pressed(key)
-
-
-def get_screen(chip):
-    """get a stylized text representation of the chip-8's display"""
-
-    # transpose the display so it's right-side up
-    display = []
-    for y in range(32):
-        display.append([0] * 64)
-    for x, column in enumerate(chip.disp):
-        for y, val in enumerate(column):
-            display[y][x] = val
-
-    # add colored characters to output string
-    output = ""
-    for row in display:
-        for val in row:
-            if val:
-                output += Back.GREEN + "  "
-            else:
-                output += Back.RESET + "  "
-        output += Back.RESET + "\n"
-
-    return output
-
-
-def get_stylized_registers(chip):
-    """return a stylized string representation of the registers"""
-    output = ""
-
-    for i in range(4):
-        for j in range(4):
-            n = j + 4 * i
-            output += f"r{hex(n)[2]}:  {double_hex(chip.regs[n])} \t"
-        output += "\n"
-
-    output += "\n"
-    output += f"I:{hex(chip.regI)}\t\t\t"
-    output += f"dt:{hex(chip.dt)}\t\t\t"
-    output += f"st:{hex(chip.st)}\n"
-
-    return output
-
-
-def get_stylized_mem(chip):
-    """return a stylized string representation of the chip's  memory"""
-    distance = 12  # distance away from the program counter to display
-
-    valueRow = []  # row of values in memory
-    addrRow = []  # row of memory addresses
-    arrowRow = []  # row with an arrow to the current instruction
-
-    for i in range(chip.pc - distance, chip.pc + distance):
-        if i >= 0 and i < len(chip.mem):
-            valueRow.append(double_hex(chip.mem[i]) + "  ")
+        if key == currPress[0]:
+            chip.keys[i] = True
         else:
-            valueRow.append(double_hex(0) + "  ")
-        addrRow.append(triple_hex(i) + " ")
-
-        if i == chip.pc:
-            arrowRow.append(Fore.BLUE + "^" + Fore.RESET)
-        else:
-            arrowRow.append("     ")
-
-    return "\n" + "".join(valueRow) + "\n" + "".join(addrRow) + "\n" + "".join(arrowRow)
+            chip.keys[i] = False
 
 
-def get_stylized_keys(chip):
-    """return a stylized string representation of which keys are pressed on the chip"""
-    keys = (
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "a",
-        "b",
-        "c",
-        "d",
-        "e",
-        "f",
-    )
-    output = "\n"
-    for key, value in zip(keys, chip.keys):
-        if value:
-            output += Back.WHITE + Fore.BLACK + key + Back.RESET + Fore.RESET + "\t"
-        else:
-            output += key + "\t"
-
-    return output
-
-
-def double_hex(n):
-    """return a two digit hex representation of an integer"""
-    h = hex(n)
-    if len(h) == 3:
-        h = h[:2] + "0" + h[2]
-    return h
-
-
-def triple_hex(n):
-    """return a three digit hex representation of an integer"""
-    h = double_hex(n)
-    if len(h) == 4:
-        h = h[:2] + "0" + h[2:]
-    return h
-
-
-def text_display(chip):
-    """display an interface to the chip in the terminal"""
-    os.system("clear")
-    display = (
-        get_screen(chip)
-        + get_stylized_registers(chip)
-        + get_stylized_mem(chip)
-        + get_stylized_keys(chip)
-    )
-    print(display)
-
-
-def run_display(chip, rf):
-    """run the program on the chip and display contents in the terminal"""
-    currInst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc + 1]
-    while currInst != chip8.Chip.EXIT:
-        currInst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc + 1]
-        for _ in range(rf):
-            update_keys(chip)
+def run_chip(chip, tui, refreshrate, stdscr):
+    """cycle the chip and update the display according to the refresh rate"""
+    inst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc + 1]
+    currPress = ["", 0]
+    while inst != chip8.Chip.EXIT:
+        for _ in range(refreshrate):
+            update_keys(chip, tui, currPress)
             chip.cycle()
-        text_display(chip)
+        tui.update()
 
 
 def init_argparse():
@@ -248,7 +149,7 @@ def init_argparse():
     )
     parser.add_argument("-c", "--count", action="store_true", help="run the count demo")
     parser.add_argument("-3", "--three", action="store_true", help="run the 3 demo")
-    parser.add_argument("-r", "--run", metavar="file", help="run the prvoided program")
+    parser.add_argument("-r", "--run", metavar="file", help="run the provided program")
     parser.add_argument(
         "-cs",
         "--clockspeed",
@@ -270,28 +171,34 @@ def init_argparse():
     return parser
 
 
-def main():
+def main(stdscr):
     """run a program on the chip8 depending on specified arguments"""
+
+    # parse args
     parser = init_argparse()
     args = parser.parse_args()
+
+    # invalid arguments
+    if not any((args.three, args.count, args.run)):
+        print("incorrect arguments, use --help for help")
+        return
 
     chip = chip8.Chip()
 
     if args.three:
         load_demo_3(chip)
         chip.clockSpeed = args.clockspeed
-        run_display(chip, args.refreshrate)
     elif args.count:
         load_demo_count(chip)
         chip.clockSpeed = args.clockspeed
-        run_display(chip, args.refreshrate)
     elif args.run:
         load_file(args.run, chip)
         chip.clockSpeed = args.clockspeed
-        run_display(chip, args.refreshrate)
-    else:
-        print("incorrect arguments, use --help for help")
+
+    tui = tui8.Tui(stdscr, chip)
+
+    run_chip(chip, tui, args.refreshrate, stdscr)
 
 
 if __name__ == "__main__":
-    main()
+    curses.wrapper(main)

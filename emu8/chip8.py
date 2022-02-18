@@ -493,7 +493,7 @@ class Chip:
     def ADDi(self, reg):
         """instruction to add the value in a register to the I register"""
         self.regI += self.regs[reg]
-        self.regI = self.regI & (2**12 - 1)  # maintain 12 bits
+        self.regI = self.regI & (2 ** 12 - 1)  # maintain 12 bits
         self.pc += 2
 
     def LDdigit(self, reg):
@@ -524,7 +524,7 @@ class Chip:
         """instruction to store the values in registers 0 - x in memory
         starting at the value in the I register"""
         loc = self.regI
-        for r in range(0, reg + 1):  # TODO: are we sure this should be inclusive?
+        for r in range(0, reg + 1):  # TODO: should be inclusive?
             self.mem[loc] = self.regs[r]
             loc += 1
         self.pc += 2
@@ -533,7 +533,7 @@ class Chip:
         """instruction to load values from memory starting at the address
         pointed to by the I register into registers 0 to x"""
         loc = self.regI
-        for r in range(0, reg + 1):  # TODO: are we sure this should be inclusive?
+        for r in range(0, reg + 1):  # TODO: should be inclusive?
             self.regs[r] = self.mem[loc]
             loc += 1
         self.pc += 2
