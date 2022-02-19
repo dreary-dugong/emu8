@@ -11,9 +11,7 @@ class Tui:
 
         curses.initscr()  # intialize screen
         curses.noecho()  # don't write pressed characters to the screen
-        curses.cbreak()
         curses.curs_set(0)  # set cursor to invisible
-        stdscr.keypad(True)
 
         self.init_windows()
 

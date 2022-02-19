@@ -2,7 +2,7 @@ import chip8
 import tui8
 import argparse
 import curses
-
+import time
 
 def press(key):
     print(f"Pressed: {key}")
@@ -42,8 +42,10 @@ def load_demo_count(chip):
         0x00,
         # jump to execution
         0x12,  # jump to 530 in memory (18 bytes ahead of the start)
-        0x12,
+        0x14,
         # subroutine to print the value in register 1 and increment it
+        0x00,  # clear display
+        0xE0,
         0xF1,  # load sprite for value into I pointer
         0x29,
         0xD2,  # write sprite in I pointer to screen at constant coord
@@ -67,11 +69,11 @@ def load_demo_count(chip):
         0x35,  # if register 5 is 0, break the loop
         0x00,
         0x12,  # jump back to check delay timer again
-        0x16,
+        0x18,
         0x22,  # loop is broken, call the subroutine
         0x06,
         0x12,  # reset delay timer and reloop
-        0x12,
+        0x14,
     )
     chip.load_program(program)
 
@@ -108,6 +110,7 @@ def update_keys(chip, tui, currPress):
         "e",
         "f",
     )
+
     press = tui.inputWin.getch()
 
     # we account for a timeout becuase getch fails if it's called too quickly
@@ -195,7 +198,10 @@ def main(stdscr):
         load_file(args.run, chip)
         chip.clockSpeed = args.clockspeed
 
+    curses.noecho()
+    curses.cbreak()
     tui = tui8.Tui(stdscr, chip)
+    tui.inputWin.nodelay(1)
 
     run_chip(chip, tui, args.refreshrate, stdscr)
 
