@@ -49,12 +49,10 @@ class Tui:
 
         # special purpose registers
         istr = f"rI:{Tui.triple_hex(0)}"
-        vfstr = f"rVF:{hex(0)}"
         dtstr = f"rDT:{Tui.double_hex(0)}"
         ststr = f"rST:{Tui.double_hex(0)}"
 
         self.regWin.addstr(5, 0, istr)
-        self.regWin.addstr("   " + vfstr)
         self.regWin.addstr("   " + dtstr)
         self.regWin.addstr("   " + ststr)
 
@@ -159,15 +157,12 @@ class Tui:
         # I
         valstr = Tui.triple_hex(self.chip.regI)
         self.regWin.addstr(5, 3, valstr)
-        # VF
-        valstr = hex(self.chip.regVF)
-        self.regWin.addstr(5, 15, valstr)
         # DT
         valstr = Tui.double_hex(self.chip.dt)
-        self.regWin.addstr(5, 25, valstr)
+        self.regWin.addstr(5, 15, valstr)
         # ST
         valstr = Tui.double_hex(self.chip.st)
-        self.regWin.addstr(5, 36, valstr)
+        self.regWin.addstr(5, 26, valstr)
 
         self.regWin.refresh()
 

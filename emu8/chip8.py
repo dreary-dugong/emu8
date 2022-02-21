@@ -32,8 +32,6 @@ class Chip:
         # general purpose registers
         self.regI = 0
         # "I" register
-        self.regVF = 0
-        # "VF" register, usually used a flag
 
         # stack
         self.stack = [0] * 16
@@ -351,31 +349,31 @@ class Chip:
         self.regs[reg1] = self.regs[reg1] + self.regs[reg2]
 
         if self.regs[reg1] > 255:
-            self.regVF = 1
+            self.regs[15] = 1
             # set carry flag
             self.regs[reg1] = self.regs[reg1] & 255  # keep 8-bit limit
         else:
-            self.regVF = 0
+            self.regs[15] = 0
 
         self.pc += 2
 
     def SUB(self, reg1, reg2):
         """instruction to subtract the value of one register from another"""
         if self.regs[reg1] > self.regs[reg2]:
-            self.regVF = 1
+            self.regs[15] = 1
         else:
-            self.regVF = 0
+            self.regs[15] = 0
 
         self.regs[reg1] = self.regs[reg1] - self.regs[reg2]
         self.regs[reg1] = self.regs[reg1] & 255
-        # apparently this fixes unsigned 8-bit subtraction
+        #  this fixes unsigned 8-bit subtraction
 
         self.pc += 2
 
     def SHR(self, reg, empty):
         """instruction to divide the value of a register by 2"""
         # this is listed as taking two registers but it only operates on one
-        self.regVF = self.regs[reg] % 2
+        self.regs[15] = self.regs[reg] % 2
         # if it was odd, set the flag
         self.regs[reg] = self.regs[reg] // 2
         self.pc += 2
@@ -383,7 +381,7 @@ class Chip:
     def SUBN(self, reg1, reg2):
         """instruction to subtract the value of one register from another
         but in reverse"""
-        self.regVF = self.regs[reg2] > self.regs[reg1]
+        self.regs[15] = self.regs[reg2] > self.regs[reg1]
         # set flag?
         self.regs[reg1] = self.regs[reg2] - self.regs[reg1]
         # subtract
@@ -395,7 +393,7 @@ class Chip:
         """instruction to multiply the value in a register by 2"""
         # this is classified as taking two registers but only operates on
         # one
-        self.regVF = self.regs[reg] > 127
+        self.regs[15] = self.regs[reg] > 127
         # set flag
         self.regs[reg] = self.regs[reg] * 2
         # multiply
@@ -441,7 +439,7 @@ class Chip:
             index += 1
 
         if ow:
-            self.regVF = 1
+            self.regs[15] = 1
 
         self.pc += 2
 
