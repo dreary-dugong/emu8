@@ -63,9 +63,11 @@ class Chip:
         # set clock speed to default
         self.clockSpeed = Chip.CLOCK_SPEED
 
+        # load instruction code dictionaries for decoding
+        self.load_instruction_dicts()
+
     def load_display(self):
         """load the display as an empty matrix"""
-        # TODO: bigger display sizes? check roms for what they expect
         self.disp = []  # 2D boolean matrix representing the 63 x 32 display
         for _ in range(Chip.DISPLAY_X_MAX + 1):
             self.disp.append([False] * (Chip.DISPLAY_Y_MAX + 1))
@@ -112,6 +114,45 @@ class Chip:
 
         self.load_mem(Chip.DIGIT_MEM_INDEX, digits)
 
+    def load_instruction_dicts(self):
+        """store dictionaries of instruction codes mapped to instructions for the decoding phase"""
+        self.no_params = {0x00E0: self.CLS, 0x00EE: self.RET}
+        self.addr_param = {0x1: self.JP, 0x2: self.CALL, 0xA: self.LDI, 0xB: self.JP0}
+
+        self.reg_val_params = {
+            0x3: self.SEval,
+            0x4: self.SNEval,
+            0x6: self.LDval,
+            0x7: self.ADDval,
+            0xC: self.RND,
+        }
+        self.reg_params = {
+            (0xE, 0x9E): self.SKP,
+            (0xE, 0xA1): self.SKNP,
+            (0xF, 0x07): self.LDregdt,
+            (0xF, 0x0A): self.LDkey,
+            (0xF, 0x15): self.LDdt,
+            (0xF, 0x18): self.LDst,
+            (0xF, 0x1E): self.ADDi,
+            (0xF, 0x29): self.LDdigit,
+            (0xF, 0x33): self.LDbcd,
+            (0xF, 0x55): self.LDmemreg,
+            (0xF, 0x65): self.LDregmem,
+        }
+        self.reg_reg_params = {
+            (0x5, 0x0): self.SEreg,
+            (0x8, 0x0): self.LDreg,
+            (0x8, 0x2): self.AND,
+            (0x8, 0x3): self.XOR,
+            (0x8, 0x4): self.ADDreg,
+            (0x8, 0x5): self.SUB,
+            (0x8, 0x6): self.SHR,
+            (0x8, 0x7): self.SUBN,
+            (0x8, 0xE): self.SHL,
+            (0x8, 0x1): self.OR,
+            (0x9, 0x0): self.SNEreg,
+        }
+
     def load_mem(self, offset, vals):
         """load the values from an iterable into subsequent memory
         locations. This is just memcpy."""
@@ -150,7 +191,6 @@ class Chip:
 
     def run(self):
         """run all instructions in program memory"""
-        # TODO: for now, we treat 0 as exit. Is that correct?
         while self.mem[self.pc] != Chip.EXIT:
             self.cycle()
 
@@ -176,7 +216,6 @@ class Chip:
 
     def execute(self, inst):
         """execute a single 16-bit integer instruction on the chip"""
-        # TODO: is it worthwhile to save the decoder dictionaries as instance
         # data so we don't reload them every cycle?
 
         # if we're at an exit code, don't do anything
@@ -184,18 +223,16 @@ class Chip:
             return
 
         # instructions with no params
-        no_params = {0x00E0: self.CLS, 0x00EE: self.RET}
-        if inst in no_params:
-            no_params[inst]()
+        if inst in self.no_params:
+            self.no_params[inst]()
             return
 
         # instructions with a single 12 bit param (address)
         prefix = inst >> 12  # first 4 bits encode instruction type
         addr = inst & 0x0FFF  # last 12 bits encode param
 
-        addr_param = {0x1: self.JP, 0x2: self.CALL, 0xA: self.LDI, 0xB: self.JP0}
-        if prefix in addr_param:
-            addr_param[prefix](addr)
+        if prefix in self.addr_param:
+            self.addr_param[prefix](addr)
             return
 
         # instructions with a 4-bit param (register) and 8-bit param (literal)
@@ -204,36 +241,16 @@ class Chip:
         val = addr & 0x0FF
         # last 8 bits encode literal byte
 
-        reg_val_params = {
-            0x3: self.SEval,
-            0x4: self.SNEval,
-            0x6: self.LDval,
-            0x7: self.ADDval,
-            0xC: self.RND,
-        }
-        if prefix in reg_val_params:
-            reg_val_params[prefix](reg, val)
+        if prefix in self.reg_val_params:
+            self.reg_val_params[prefix](reg, val)
             return
 
         # instructions with a single 4-bit param (register)
         postfix = val
         # what was a literal value before is now a postfix
-        reg_params = {
-            (0xE, 0x9E): self.SKP,
-            (0xE, 0xA1): self.SKNP,
-            (0xF, 0x07): self.LDregdt,
-            (0xF, 0x0A): self.LDkey,
-            (0xF, 0x15): self.LDdt,
-            (0xF, 0x18): self.LDst,
-            (0xF, 0x1E): self.ADDi,
-            (0xF, 0x29): self.LDdigit,
-            (0xF, 0x33): self.LDbcd,
-            (0xF, 0x55): self.LDmemreg,
-            (0xF, 0x65): self.LDregmem,
-        }
 
-        if (prefix, postfix) in reg_params:
-            reg_params[(prefix, postfix)](reg)
+        if (prefix, postfix) in self.reg_params:
+            self.reg_params[(prefix, postfix)](reg)
             return
 
         # instructions with two 4-bit parameters (registers)
@@ -242,22 +259,8 @@ class Chip:
         postfix = postfix & 0x0F
         # now the postfix is only 4 bits
 
-        reg_reg_params = {
-            (0x5, 0x0): self.SEreg,
-            (0x8, 0x0): self.LDreg,
-            (0x8, 0x2): self.AND,
-            (0x8, 0x3): self.XOR,
-            (0x8, 0x4): self.ADDreg,
-            (0x8, 0x5): self.SUB,
-            (0x8, 0x6): self.SHR,
-            (0x8, 0x7): self.SUBN,
-            (0x8, 0xE): self.SHL,
-            (0x8, 0x1): self.OR,
-            (0x9, 0x0): self.SNEreg,
-        }
-
-        if (prefix, postfix) in reg_reg_params:
-            reg_reg_params[(prefix, postfix)](reg1, reg2)
+        if (prefix, postfix) in self.reg_reg_params:
+            self.reg_reg_params[(prefix, postfix)](reg1, reg2)
             return
 
         # instructions with 3 4-bit parameters (two registers, one 'nibble')
@@ -523,7 +526,7 @@ class Chip:
         """instruction to store the values in registers 0 - x in memory
         starting at the value in the I register"""
         loc = self.regI
-        for r in range(0, reg + 1):  # TODO: should be inclusive?
+        for r in range(0, reg + 1):
             self.mem[loc] = self.regs[r]
             loc += 1
         self.pc += 2
@@ -532,7 +535,7 @@ class Chip:
         """instruction to load values from memory starting at the address
         pointed to by the I register into registers 0 to x"""
         loc = self.regI
-        for r in range(0, reg + 1):  # TODO: should be inclusive?
+        for r in range(0, reg + 1):
             self.regs[r] = self.mem[loc]
             loc += 1
         self.pc += 2
