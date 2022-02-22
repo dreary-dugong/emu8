@@ -6,6 +6,10 @@ This project was based on the spec outlined here:
 
 https://web.archive.org/web/20220104155337/devernay.free.fr/hacks/chip8/C8TECH10.HTM
 
+
+https://user-images.githubusercontent.com/85261881/155195507-50fe5419-9b06-4590-bf15-63357f0450a2.mp4
+
+
 ## Usage
 
 The main method for the emulator is implemented in `emu8.py` which requires one of the following three arguments:
@@ -27,6 +31,9 @@ lower value will noticably slow down the program. Higher values seem to have dim
 - `-db` or `--debug` : run the emulator in debug mode. The program counter will only progress to the next instruction when the user presses the space bar.
 
 ## Display
+
+![emu8-1](https://user-images.githubusercontent.com/85261881/155195287-b248eaaf-a305-4715-8fb0-b0f460c39949.png)
+
 
 The terminal display includes 4 parts:
 
