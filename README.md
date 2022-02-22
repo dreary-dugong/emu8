@@ -20,7 +20,7 @@ The main method for the emulator is implemented in `emu8.py` which requires one 
 
 - `-r <file>` or `--run <file>` : run a supplied chip-8 binary rom
 
-There are also a number of optional arguments to set parameters for the emulator:
+There are also several optional arguments to set parameters for the emulator:
 
 - `-cl` or `--clockspeed` : set the clock speed in Hz (default is 500 as outlined in the spec). Note that the upper limit here depends on the host machine,
   but it's unlikely to reach beyond 2000 before throwing an exception for an instruction taking too long. 
