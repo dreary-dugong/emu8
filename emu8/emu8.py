@@ -2,7 +2,7 @@ import chip8
 import tui8
 import argparse
 import curses
-import time
+
 
 def press(key):
     print(f"Pressed: {key}")
@@ -28,31 +28,6 @@ def load_demo_3(chip):
         0xD2,  # write sprite to screen at coordinstes stored in 2 and 3
         0x35,
     )
-    chip.load_program(program)
-
-
-def load_add_test(chip):
-    """load a program to test the add instruction"""
-    program = (
-        0x6A,  # load 255 into register A
-        0xFF,
-        0x6B,  # load 241 into register B
-        0xF1,
-        0x8A,  # add register B to register A, set VF flag
-        0xB4,
-        0x3A,  # if A is now 240 (it should be), skip ahead
-        0xF0,
-        0x13,  # otherwise, skip to address 0x392 to display an error
-        0x92,
-        0x3F,  # addition passed. Now check if F is 01
-        0x01,
-        0x13,
-        0x92,
-        0x7E,
-        0x01,
-        0x6F,
-        0x00,
-     )
     chip.load_program(program)
 
 
