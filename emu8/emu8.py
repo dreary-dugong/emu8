@@ -144,6 +144,17 @@ def run_chip(chip, tui, refreshrate, stdscr):
         tui.update()
 
 
+def run_debug(chip, tui, stdscr):
+    """cycle the chip and update the display only when space is pressed"""
+    inst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc + 1]
+    currPress = ["", 0]
+    while inst != chip8.Chip.EXIT:
+        while tui.inputWin.getch() == ord(" "):
+            update_keys(chip, tui, currPress)
+            chip.cycle()
+            tui.update()
+
+
 def init_argparse():
     """create an argument parser"""
     parser = argparse.ArgumentParser(
@@ -170,6 +181,7 @@ def init_argparse():
         help="""set the number of cycles between
             screen refreshes (default 10)""",
     )
+    parser.add_argument("-db", "--debug", action="store_true", help="run in debug mode")
 
     return parser
 
@@ -203,7 +215,10 @@ def main(stdscr):
     tui = tui8.Tui(stdscr, chip)
     tui.inputWin.nodelay(1)
 
-    run_chip(chip, tui, args.refreshrate, stdscr)
+    if args.debug:
+        run_debug(chip, tui, stdscr)
+    else:
+        run_chip(chip, tui, args.refreshrate, stdscr)
 
 
 if __name__ == "__main__":
