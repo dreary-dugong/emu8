@@ -3,6 +3,7 @@ import tui8
 import argparse
 import curses
 
+
 def load_demo_3(chip):
     """load a simple 'hello, world' style program for testing"""
     # the following should write a "3" to the display
