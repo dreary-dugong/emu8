@@ -3,16 +3,6 @@ import tui8
 import argparse
 import curses
 
-
-def press(key):
-    print(f"Pressed: {key}")
-
-
-def release(key):
-    print(f"Released: {key}")
-    return False
-
-
 def load_demo_3(chip):
     """load a simple 'hello, world' style program for testing"""
     # the following should write a "3" to the display
