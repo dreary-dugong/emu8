@@ -184,21 +184,17 @@ def main(stdscr):
     parser = init_argparse()
     args = parser.parse_args()
 
-    # invalid arguments
-    if not any((args.three, args.count, args.run)):
-        print("incorrect arguments, use --help for help")
-        return
-
     chip = chip8.Chip()
 
-    if args.three:
+    if args.run:
+        load_file(args.run, chip)
+        chip.clockSpeed = args.clockspeed
+    elif args.three:
         load_demo_3(chip)
         chip.clockSpeed = args.clockspeed
-    elif args.count:
+    # count is the default
+    else:
         load_demo_count(chip)
-        chip.clockSpeed = args.clockspeed
-    elif args.run:
-        load_file(args.run, chip)
         chip.clockSpeed = args.clockspeed
 
     curses.noecho()
