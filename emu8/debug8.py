@@ -74,25 +74,25 @@ def inst_to_asm(inst):
         return f"SE v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
     elif prefix == 0x8:
         if postfix == 0x0:
-            return f"LD v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+            return f"LD v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
         elif postfix == 0x1:
-            return f"OR v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+            return f"OR v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
         elif postfix == 0x2:
-            return f"AND v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+            return f"AND v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
         elif postfix == 0x3:
-            return f"XOR v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+            return f"XOR v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
         elif postfix == 0x4:
-            return f"ADD v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+            return f"ADD v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
         elif postfix == 0x5:
-            return f"SUB v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+            return f"SUB v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
         elif postfix == 0x6:
-            return f"SHR v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+            return f"SHR v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
         elif postfix == 0x7:
-            return f"SUBN v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+            return f"SUBN v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
         elif postfix == 0xE:
-            return f"SHL v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+            return f"SHL v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
     elif prefix == 0x9 and postfix == 0x0:
-        return f"SNE v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+        return f"SNE v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
 
     #three parameters, 2 of which are registers and one of which is redundant
     nibble = postfix
@@ -172,28 +172,28 @@ def inst_to_asmdesc(inst):
     reg2 = postfix >> 4
     postfix = postfix & 0x0F
     if prefix == 0x5 and postfix == 0x0:
-        return f"skip the next instruction if the values in v{hex(reg1)[-1]} and v{hex(reg2[-1])} are equal"
+        return f"skip the next instruction if the values in v{hex(reg1)[-1]} and v{hex(reg2)[-1]} are equal"
     elif prefix == 0x8:
         if postfix == 0x0:
-            return f"load the value from v{hex(reg2)[-1]} into v{hex(reg2[-1])}"
+            return f"load the value from v{hex(reg2)[-1]} into v{hex(reg2)[-1]}"
         elif postfix == 0x1:
-            return f"bitwise OR the values in v{hex(reg1)[-1]} and v{hex(reg2[-1])} and store the result in v{hex(reg1)[-1]}"
+            return f"bitwise OR the values in v{hex(reg1)[-1]} and v{hex(reg2)[-1]} and store the result in v{hex(reg1)[-1]}"
         elif postfix == 0x2:
-            return f"bitwise AND the values in v{hex(reg1)[-1]} and v{hex(reg2[-1])} and store the result in v{hex(reg1)[-1]}"
+            return f"bitwise AND the values in v{hex(reg1)[-1]} and v{hex(reg2)[-1]} and store the result in v{hex(reg1)[-1]}"
         elif postfix == 0x3:
-            return f"bitwise XOR the values in v{hex(reg1)[-1]} and v{hex(reg2[-1])} and store the result in v{hex(reg1)[-1]}"
+            return f"bitwise XOR the values in v{hex(reg1)[-1]} and v{hex(reg2)[-1]} and store the result in v{hex(reg1)[-1]}"
         elif postfix == 0x4:
-            return f"add the value from v{hex(reg2)[-1]} to v{hex(reg2[-1])}"
+            return f"add the value from v{hex(reg2)[-1]} to v{hex(reg2)[-1]}"
         elif postfix == 0x5:
-            return f"subtract the value in v{hex(reg2)[-1]} from v{hex(reg1[-1])}"
+            return f"subtract the value in v{hex(reg2)[-1]} from v{hex(reg1)[-1]}"
         elif postfix == 0x6:
             return f"divide the value in v{hex(reg1)[-1]} by 2, store the result in v{hex(reg1[-1])}, and set VF accordingly"
         elif postfix == 0x7:
-            return f"set v{hex(reg1)[-1]} to v{hex(reg2[-1])} minus v{hex(reg1)[-1]} and set VF to NOT borrow"
+            return f"set v{hex(reg1)[-1]} to v{hex(reg2)[-1]} minus v{hex(reg1)[-1]} and set VF to NOT borrow"
         elif postfix == 0xE:
             return f"the value in v{hex(reg1)[-1]} is multiplied by 2 and stored in v{hex(reg1[-1])} and VF is set to overflow"
     elif prefix == 0x9 and postfix == 0x0:
-        return f"skip the next instruction if the values in v{hex(reg1)[-1]} and v{hex(reg2[-1])} are not equal"
+        return f"skip the next instruction if the values in v{hex(reg1)[-1]} and v{hex(reg2)[-1]} are not equal"
 
     # invalid instruction
     else:
