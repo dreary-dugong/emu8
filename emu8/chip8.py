@@ -164,12 +164,12 @@ class Chip:
     def display_byte(self, x, y, b):
         """set 'pixels' in the display according to a byte"""
         ow = False
-        y = y % Chip.DISPLAY_Y_MAX
+        y = y % (Chip.DISPLAY_Y_MAX + 1)
 
         for i in range(8):
             p = b & (1 << (7 - i))  # isolate our bit
             p = p >> (7 - i)  # shift our bit all the way right for 1 or 0
-            currx = (x + i) % Chip.DISPLAY_X_MAX  # wrap around
+            currx = (x + i) % (Chip.DISPLAY_X_MAX + 1)  # wrap around
 
             # are we overwritiing a previous sprite?
             if not p and self.disp[currx][y]:
