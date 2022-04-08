@@ -123,6 +123,32 @@ def update_keys(chip, tui, currPress):
         else:
             chip.keys[i] = False
 
+def update_keys_debug(chip, tui, press):
+    """toggle the chip's keys according to what's pressed on the keyboard"""
+    keys = (
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+    )
+
+    # update chip keys based on what's pressed
+    for i, key in enumerate(keys):
+        if key == chr(press):
+            chip.keys[i] = not chip.keys[i]
+
 
 def run_chip(chip, tui, refreshrate, stdscr):
     """cycle the chip and update the display according to the refresh rate"""
@@ -138,12 +164,16 @@ def run_chip(chip, tui, refreshrate, stdscr):
 def run_debug(chip, tui, stdscr):
     """cycle the chip and update the display only when space is pressed"""
     inst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc + 1]
-    currPress = ["", 0]
     while inst != chip8.Chip.EXIT:
-        while tui.inputWin.getch() == ord(" "):
-            update_keys(chip, tui, currPress)
-            chip.cycle()
-            tui.update()
+
+        while (press := tui.inputWin.getch()) != -1:
+
+            if press == ord(" "):
+                chip.cycle()
+                tui.update()
+            else:
+                update_keys_debug(chip, tui, press)
+                tui.update()
 
 
 def init_argparse():
@@ -158,7 +188,7 @@ def init_argparse():
     parser.add_argument(
         "-cs",
         "--clockspeed",
-        metavar="speed",
+        metavar="Hz",
         type=int,
         help="set the clock speed in Hz (default 500)",
         default=500,
