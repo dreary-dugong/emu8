@@ -1,4 +1,5 @@
 import curses
+import debug8
 
 
 class Tui:
@@ -60,23 +61,25 @@ class Tui:
 
     def init_mem_win(self):
         """create window to display chip memory contents"""
-        self.memWin = curses.newwin(4, 150, 39, 0)
+        self.memWin = curses.newwin(45, 27, 0, 130)
 
-        # row of memory values
-        memlimit = 11
-        self.memWin.addstr(1, 0, "")
-        for _ in range(2 * memlimit + 1):
-            self.memWin.addstr(Tui.double_hex(0) + "  ")
+        memlimit = 20 
 
-        # row of memory addresses
-        self.memWin.addstr(2, 0, "")
-        for _ in range(2 * memlimit + 1):
-            self.memWin.addstr(Tui.triple_hex(0) + " ")
+        # each row in the 3 columns
+        for y in range(2*memlimit + 1):
 
-        # row with pointer (^) to current executing instruction
-        # we only use this color once
-        curses.init_pair(5, curses.COLOR_BLUE, curses.COLOR_BLACK)
-        self.memWin.addstr(3, 6 * memlimit, "^", curses.color_pair(5))
+            # memory address column
+            self.memWin.addstr(y, 0, Tui.triple_hex(0))
+            # memory value column
+            self.memWin.addstr(y, 6, Tui.double_hex(0))
+            # assembly instruction column
+            if y % 2 == 0:
+                self.memWin.addstr(y, 12, debug8.inst_to_asm(0))
+            else:
+                self.memWin.addstr(y, 12, "               ")
+
+        curses.init_pair(5, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        # self.memWin.addstr(3, 6 * memlimit, "^", curses.color_pair(5))
 
         self.memWin.refresh()
 
@@ -169,16 +172,32 @@ class Tui:
     def update_mem_win(self):
         """update memory window to match contents of chip memory"""
 
-        memlimit = 11  # this should be instance data probably
+        memlimit = 20  # this should be instance data probably
         pc = self.chip.pc
         mem = self.chip.mem
 
-        x = 0
+        self.memWin.erase()
+
+        y = 0
         for addr in range(pc - memlimit, pc + memlimit + 1):
 
-            self.memWin.addstr(1, x, Tui.double_hex(mem[addr]))
-            self.memWin.addstr(2, x, Tui.triple_hex(addr))
-            x += 6
+            if addr == pc:
+                color = 5
+            else:
+                color = 0
+
+            # memory address column
+            self.memWin.addstr(y, 0, Tui.triple_hex(addr), curses.color_pair(color))
+            # memory value column
+            self.memWin.addstr(y, 6, Tui.double_hex(mem[addr]), curses.color_pair(color))
+            # assembly instruction column
+            if addr % 2 == 0:
+                inst = (mem[addr] << 8) + mem[addr+1]
+                self.memWin.addstr(y, 12, debug8.inst_to_asm(inst), curses.color_pair(color))
+            else:
+                self.memWin.addstr(y, 12, "               ", curses.color_pair(color))
+
+            y += 1
 
         self.memWin.refresh()
 

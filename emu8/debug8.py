@@ -4,6 +4,9 @@ import tui8
 def inst_to_asm(inst):
     """convert a two-byte integer instruction to chip-8 assembly"""
 
+    if inst > ((0xFF << 8) + 0xFF):
+        raise(Exception(f"value too large: {hex(inst)}"))
+
     # instructions with 0 params
     if inst == 0x00E0:
         return "CLS"
@@ -14,27 +17,27 @@ def inst_to_asm(inst):
     prefix = inst >> 12
     addr = inst & 0x0FFF
     if prefix == 0x1:
-        return f"JP {tui8.triple_hex(addr)}"
+        return f"JP {tui8.Tui.triple_hex(addr)}"
     elif prefix == 0x2:
-        return f"CALL {tui8.triple_hex(addr)}"
+        return f"CALL {tui8.Tui.triple_hex(addr)}"
     elif prefix == 0xA:
-        return f"LD I, {tui8.triple_hex(addr)}"
+        return f"LD I, {tui8.Tui.triple_hex(addr)}"
     elif prefix == 0xB:
-        return f"JP V0, {tui8.triple_hex(addr)}"
+        return f"JP V0, {tui8.Tui.triple_hex(addr)}"
 
     # two parameters, one of which is a register and the other is a value
     reg = addr >> 8
     val = addr & 0x0FF
     if prefix == 0x3:
-        return f"SE v{hex(reg)[-1]}, {tui8.double_hex(val)}"
+        return f"SE v{hex(reg)[-1]}, {tui8.Tui.double_hex(val)}"
     elif prefix == 0x4:
-        return f"SNE v{hex(reg)[-1]}, {tui8.double_hex(val)}"
+        return f"SNE v{hex(reg)[-1]}, {tui8.Tui.double_hex(val)}"
     elif prefix == 0x6:
-        return f"LD v{hex(reg)[-1]}, {tui8.double_hex(val)}"
+        return f"LD v{hex(reg)[-1]}, {tui8.Tui.double_hex(val)}"
     elif prefix == 0x7:
-        return f"ADD v{hex(reg)[-1]}, {tui8.double_hex(val)}"
+        return f"ADD v{hex(reg)[-1]}, {tui8.Tui.double_hex(val)}"
     elif prefix == 0xC:
-        return f"RND v{hex(reg)[-1]}, {tui8.double_hex(val)}"
+        return f"RND v{hex(reg)[-1]}, {tui8.Tui.double_hex(val)}"
 
     # one parameter which is a single register
     postfix = val
@@ -91,6 +94,11 @@ def inst_to_asm(inst):
     elif prefix == 0x9 and postfix == 0x0:
         return f"SNE v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
 
+    #three parameters, 2 of which are registers and one of which is redundant
+    nibble = postfix
+    if prefix == 0xd:
+        return f"DRW v{hex(reg1)[-1]}, v{hex(reg2)[-1]}, {nibble}"
+
     # invalid instruction
     else:
         return f"ERR: {hex(inst)}"
@@ -110,27 +118,27 @@ def inst_to_asmdesc(inst):
     prefix = inst >> 12
     addr = inst & 0x0FFF
     if prefix == 0x1:
-        return f"jump to instruction at {tui8.triple_hex(addr)}"
+        return f"jump to instruction at {tui8.Tui.triple_hex(addr)}"
     elif prefix == 0x2:
-        return f"call subroutine at {tui8.triple_hex(addr)}"
+        return f"call subroutine at {tui8.Tui.triple_hex(addr)}"
     elif prefix == 0xA:
-        return f"load the value {tui8.triple_hex(addr)} into the I register"
+        return f"load the value {tui8.Tui.triple_hex(addr)} into the I register"
     elif prefix == 0xB:
-        return f"jump to {tui8.triple_hex(addr)} plus the value in V0"
+        return f"jump to {tui8.Tui.triple_hex(addr)} plus the value in V0"
 
     # two parameters, one of which is a register and the other is a value
     reg = addr >> 8
     val = addr & 0x0FF
     if prefix == 0x3:
-        return f"skip the next instruction if v{hex(reg)[-1]} and {tui8.double_hex(val)} have the same value"
+        return f"skip the next instruction if v{hex(reg)[-1]} and {tui8.Tui.double_hex(val)} have the same value"
     elif prefix == 0x4:
-        return f"skip the next instruction if v{hex(reg)[-1]} and {tui8.double_hex(val)} do not have the same value"
+        return f"skip the next instruction if v{hex(reg)[-1]} and {tui8.Tui.double_hex(val)} do not have the same value"
     elif prefix == 0x6:
-        return f"load the value {tui8.double_hex(val)} into v{hex(reg)[-1]}"
+        return f"load the value {tui8.Tui.double_hex(val)} into v{hex(reg)[-1]}"
     elif prefix == 0x7:
-        return f"add the value {tui8.double_hex(val)} to v{hex(reg)[-1]}"
+        return f"add the value {tui8.Tui.double_hex(val)} to v{hex(reg)[-1]}"
     elif prefix == 0xC:
-        return f"generate a random byte, bitewise and it with {tui8.double_hex(val)} and store it in v{hex(reg)[-1]}"
+        return f"generate a random byte, bitewise and it with {tui8.Tui.double_hex(val)} and store it in v{hex(reg)[-1]}"
 
     # one parameter which is a single register
     postfix = val
