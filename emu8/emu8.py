@@ -2,6 +2,8 @@ import chip8
 import tui8
 import argparse
 import curses
+import copy
+from collections import deque
 
 
 def load_demo_3(chip):
@@ -164,13 +166,27 @@ def run_chip(chip, tui, refreshrate, stdscr):
 def run_debug(chip, tui, stdscr):
     """cycle the chip and update the display only when space is pressed"""
     inst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc + 1]
+    states = deque() # copies of the chip at previous states, this eats a ton of memory
     while inst != chip8.Chip.EXIT:
 
         while (press := tui.inputWin.getch()) != -1:
 
+            # step
             if press == ord(" "):
+                states.append(copy.deepcopy(chip))
                 chip.cycle()
                 tui.update()
+
+            # go back 
+            elif press == ord("z"):
+                try:
+                    chip = states.pop()
+                    tui.chip = chip
+                    tui.update()
+                except:
+                    pass
+
+            # toggle chip keys 
             else:
                 update_keys_debug(chip, tui, press)
                 tui.update()
