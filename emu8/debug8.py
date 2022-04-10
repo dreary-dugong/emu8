@@ -1,5 +1,5 @@
 import tui8
-
+import sys
 
 def inst_to_asm(inst):
     """convert a two-byte integer instruction to chip-8 assembly"""
@@ -198,3 +198,38 @@ def inst_to_asmdesc(inst):
     # invalid instruction
     else:
         return "invalid instruction"
+
+def decompile(infile, outfile):
+    """decompile a ch8 binary back into an assembly file"""
+    
+    with open(infile, "rb") as inf:
+        with open(outfile, "w") as outf:
+
+            memloc = 0x200 # we include memory location for easier debugging
+            while data:=inf.read(1):
+                prefix = data
+                postfix = inf.read(1)
+                if not postfix:
+                    postfix = b'\x00'
+
+                instcode = (int.from_bytes(prefix, "big") << 8) + int.from_bytes(postfix, "big")
+
+                outf.write(hex(memloc)+"\t")
+                outf.write(inst_to_asm(instcode) + "\n")
+
+                memloc += 2
+
+def main():
+    infile = sys.argv[1]
+    outfile = sys.argv[2]
+    decompile(infile, outfile)
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
