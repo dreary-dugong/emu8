@@ -71,7 +71,7 @@ def inst_to_asm(inst):
     reg2 = postfix >> 4
     postfix = postfix & 0x0F
     if prefix == 0x5 and postfix == 0x0:
-        return f"SE v{hex(reg1)[-1]}, v{hex(reg2[-1])}"
+        return f"SE v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
     elif prefix == 0x8:
         if postfix == 0x0:
             return f"LD v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
@@ -94,7 +94,7 @@ def inst_to_asm(inst):
     elif prefix == 0x9 and postfix == 0x0:
         return f"SNE v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
 
-    #three parameters, 2 of which are registers and one of which is redundant
+    #three parameters, 2 of which are registers and one of which is a byte
     nibble = postfix
     if prefix == 0xd:
         return f"DRW v{hex(reg1)[-1]}, v{hex(reg2)[-1]}, {nibble}"
@@ -187,13 +187,18 @@ def inst_to_asmdesc(inst):
         elif postfix == 0x5:
             return f"subtract the value in v{hex(reg2)[-1]} from v{hex(reg1)[-1]}"
         elif postfix == 0x6:
-            return f"divide the value in v{hex(reg1)[-1]} by 2, store the result in v{hex(reg1[-1])}, and set VF accordingly"
+            return f"divide the value in v{hex(reg1)[-1]} by 2, store the result in v{hex(reg1)[-1]}, and set VF accordingly"
         elif postfix == 0x7:
             return f"set v{hex(reg1)[-1]} to v{hex(reg2)[-1]} minus v{hex(reg1)[-1]} and set VF to NOT borrow"
         elif postfix == 0xE:
-            return f"the value in v{hex(reg1)[-1]} is multiplied by 2 and stored in v{hex(reg1[-1])} and VF is set to overflow"
+            return f"the value in v{hex(reg1)[-1]} is multiplied by 2 and stored in v{hex(reg1)[-1]} and VF is set to overflow"
     elif prefix == 0x9 and postfix == 0x0:
         return f"skip the next instruction if the values in v{hex(reg1)[-1]} and v{hex(reg2)[-1]} are not equal"
+
+    #three parameters, 2 of which are registers and one of which is a byte
+    nibble = postfix
+    if prefix == 0xd:
+        return f"draw {nibble} bytes on the display at coordinates stored in v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
 
     # invalid instruction
     else:

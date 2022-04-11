@@ -22,6 +22,7 @@ class Tui:
         self.init_reg_win()
         self.init_mem_win()
         self.init_key_win()
+        self.init_desc_win()
         self.init_input_win()
 
     def init_chip_win(self):
@@ -45,7 +46,7 @@ class Tui:
             for col in range(4):
 
                 reg = 4 * row + col
-                regstr = f"r{hex(reg)[2]}:{Tui.double_hex(0)}   "
+                regstr = f"v{hex(reg)[2]}:{Tui.double_hex(0)}   "
                 self.regWin.addstr(row, col * len(regstr), regstr)
 
         # special purpose registers
@@ -115,6 +116,20 @@ class Tui:
 
         self.keyWin.refresh()
 
+    def init_desc_win(self):
+        """create a window to describe currently executing instructions"""
+        curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
+        self.descHighlightColor = curses.color_pair(3)
+
+        self.descWin = curses.newwin(3, 100, 41, 56)
+
+        self.descWin.addstr(0, 0, "invalid instruction")
+        self.descWin.addstr(1, 0, "invalid instruction", self.descHighlightColor)
+        self.descWin.addstr(2, 0, "invalid instruction", curses.color_pair(0))
+
+        self.descWin.refresh()
+
+
     def init_input_win(self):
         """initialize a blank window to accept user input"""
         self.inputWin = curses.newwin(1, 1, 39, 0)
@@ -130,6 +145,7 @@ class Tui:
         self.update_reg_win()
         self.update_mem_win()
         self.update_key_win()
+        self.update_desc_win()
         self.update_input_win()
 
     def update_chip_win(self):
@@ -212,6 +228,30 @@ class Tui:
                 self.keyWin.addstr(y, x, hex(key)[2], curses.color_pair(0))
 
         self.keyWin.refresh()
+
+    def update_desc_win(self):
+        """update description window with previous, current, and next instruction descriptions"""
+        # note that we base this off mem so previous and current may not be accurate since we don't
+        # account for jumps
+
+        pc = self.chip.pc
+        mem = self.chip.mem
+
+        self.descWin.erase()
+        
+        prevInst = (mem[pc-2] << 8) + mem[pc-1]
+        currInst = (mem[pc] << 8) + mem[pc+1]
+        nextInst = (mem[pc+2] << 8) + mem[pc+3]
+
+        prevDesc = debug8.inst_to_asmdesc(prevInst)
+        currDesc = debug8.inst_to_asmdesc(currInst)
+        nextDesc = debug8.inst_to_asmdesc(nextInst)
+
+        self.descWin.addstr(0, 0, prevDesc)
+        self.descWin.addstr(1, 0, currDesc, self.descHighlightColor)
+        self.descWin.addstr(2, 0, nextDesc, curses.color_pair(0))
+
+        self.descWin.refresh()
 
     def update_input_win(self):
         """update input window to set cursor to receive input"""
