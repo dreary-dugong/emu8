@@ -172,10 +172,11 @@ class Chip:
             currx = (x + i) % (Chip.DISPLAY_X_MAX + 1)  # wrap around
 
             # are we overwritiing a previous sprite?
-            if not p and self.disp[currx][y]:
+            if p and self.disp[currx][y]:
                 ow = True
-
-            self.disp[currx][y] = True if p != self.disp[currx][y] else False
+                self.disp[currx][y] = False
+            elif p:
+                self.disp[currx][y] = True
 
         return ow
 
@@ -189,6 +190,13 @@ class Chip:
             self.mem[index] = val
             index += 1
 
+    def get_curr_inst(self):
+        """return the current instruction pointed to by the program counter"""
+        inst = self.mem[self.pc]  # first byte
+        inst = inst << 8  # shift over to make room for second byte
+        inst = inst + self.mem[self.pc + 1]  # add second byte
+        return inst 
+
     def run(self):
         """run all instructions in program memory"""
         while self.mem[self.pc] != Chip.EXIT:
@@ -196,9 +204,7 @@ class Chip:
 
     def cycle(self):
         """run a single instruction with proper timing"""
-        inst = self.mem[self.pc]  # first byte
-        inst = inst << 8  # shift over to make room for second byte
-        inst = inst + self.mem[self.pc + 1]  # add second byte
+        inst = self.get_curr_inst()
 
         start = time.time()
         self.execute(inst)
@@ -443,6 +449,8 @@ class Chip:
 
         if ow:
             self.regs[15] = 1
+        else:
+            self.regs[15] = 0
 
         self.pc += 2
 

@@ -154,42 +154,59 @@ def update_keys_debug(chip, tui, press):
 
 def run_chip(chip, tui, refreshrate, stdscr):
     """cycle the chip and update the display according to the refresh rate"""
-    inst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc + 1]
-    currPress = ["", 0]
-    while inst != chip8.Chip.EXIT:
-        for _ in range(refreshrate):
-            update_keys(chip, tui, currPress)
-            chip.cycle()
-        tui.update()
 
+    currPress = ["", 0] # initialize key press history to nothing
+
+    while chip.get_curr_inst() != chip8.Chip.EXIT:
+
+        screenUpdated = False
+        for _ in range(refreshrate):
+
+            # if we're going to write to the chip sceen, note it
+            inst = chip.get_curr_inst()
+            if inst >> 12 == 0xD:
+                screenUpdated = True
+
+            # run the chip and check for input
+            update_keys(chip, tui, currPress) 
+            chip.cycle()
+
+
+        # if we're running the tui in fast mode,
+        # don't update it unless draw has been called
+        if not tui.compmode:
+            if screenUpdated:
+                tui.update()
+        else:
+            tui.update()
 
 def run_debug(chip, tui, stdscr):
     """cycle the chip and update the display only when space is pressed"""
-    inst = (chip.mem[chip.pc] << 8) + chip.mem[chip.pc + 1]
-    states = deque() # copies of the chip at previous states, this eats a ton of memory
-    while inst != chip8.Chip.EXIT:
 
-        while (press := tui.inputWin.getch()) != -1:
+    states = deque() # copies of the chip at previous states, this eats a ton of memory
+    while chip.get_curr_inst() != chip8.Chip.EXIT:
+
+        press = tui.inputWin.getch()
+        if press != -1:
 
             # step
             if press == ord(" "):
                 states.append(copy.deepcopy(chip))
                 chip.cycle()
-                tui.update()
 
             # go back 
             elif press == ord("z"):
                 try:
                     chip = states.pop()
                     tui.chip = chip
-                    tui.update()
-                except:
+                except: # if the states deque is empty, do nothing
                     pass
 
             # toggle chip keys 
             else:
                 update_keys_debug(chip, tui, press)
-                tui.update()
+
+            tui.update()
 
 
 def init_argparse():
