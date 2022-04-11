@@ -5,19 +5,29 @@ import debug8
 class Tui:
     """represent the terminal user interface for a chip8 Chip object"""
 
-    def __init__(self, stdscr, chip):
+    def __init__(self, stdscr, chip, compmode):
         """inintialize instance data and set curses settings"""
         self.stdscr = stdscr
         self.chip = chip
+        self.compmode = compmode # are we running in fast mode or comprehensive mode
 
         curses.initscr()  # intialize screen
         curses.noecho()  # don't write pressed characters to the screen
         curses.curs_set(0)  # set cursor to invisible
 
-        self.init_windows()
+        if self.compmode:
+            self.init_windows_comp()
+        else:
+            self.init_windows_fast()
 
-    def init_windows(self):
-        """create windows and insert static content"""
+    def init_windows_fast(self):
+        """initialize the minmal number of windows"""
+        self.init_chip_win()
+        self.init_key_win()
+        self.init_input_win()
+
+    def init_windows_comp(self):
+        """initialize all windows"""
         self.init_chip_win()
         self.init_reg_win()
         self.init_mem_win()
@@ -137,10 +147,19 @@ class Tui:
 
     def update(self):
         """alternative method to update all windows"""
-        self.update_windows()
+        if self.compmode:
+            self.update_windows_comp()
+        else:
+            self.update_windows_fast()
 
-    def update_windows(self):
-        """update displayed windows to reflect contents on chip"""
+    def update_windows_fast(self):
+        """update the minimal number of windows (fast mode)"""
+        self.update_chip_win()
+        self.update_key_win()
+        self.update_input_win()
+
+    def update_windows_comp(self):
+        """update all windows (comprehensive mode)"""
         self.update_chip_win()
         self.update_reg_win()
         self.update_mem_win()

@@ -218,6 +218,7 @@ def init_argparse():
         help="""set the number of cycles between
             screen refreshes (default 10)""",
     )
+    parser.add_argument("-cm", "--comprehensive", action="store_true", help="run in comprehensive windowed mode")
     parser.add_argument("-db", "--debug", action="store_true", help="run in debug mode")
 
     return parser
@@ -245,7 +246,8 @@ def main(stdscr):
 
     curses.noecho()
     curses.cbreak()
-    tui = tui8.Tui(stdscr, chip)
+
+    tui = tui8.Tui(stdscr, chip, compmode=args.comprehensive)
     tui.inputWin.nodelay(1)
 
     if args.debug:
