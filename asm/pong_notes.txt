@@ -1,0 +1,16 @@
+0x2ea: paddle sprite
+0x2d4: subroutine to write scores to screen
+0x2f0: ball sprite
+
+0x22a: user input -> ai -> paddle drawing -> ball movement -> ball collision
+
+va, vb: left paddle x, y
+vc, vd: right paddle x, y
+
+v6: ball x
+v7: ball y
+
+v8: ball dx (starts at 2)
+v9: ball dy (starts at 255)
+
+ve: score
