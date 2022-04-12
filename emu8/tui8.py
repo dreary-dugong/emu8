@@ -227,7 +227,7 @@ class Tui:
                 y, 6, Tui.double_hex(mem[addr]), curses.color_pair(color)
             )
             # assembly instruction column
-            if addr % 2 == 0:
+            if (addr - (pc % 2)) % 2 == 0:
                 inst = (mem[addr] << 8) + mem[addr + 1]
                 self.memWin.addstr(
                     y, 12, debug8.inst_to_asm(inst), curses.color_pair(color)
