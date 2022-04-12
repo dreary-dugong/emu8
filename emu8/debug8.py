@@ -1,11 +1,12 @@
 import tui8
 import sys
 
+
 def inst_to_asm(inst):
     """convert a two-byte integer instruction to chip-8 assembly"""
 
     if inst > ((0xFF << 8) + 0xFF):
-        raise(Exception(f"value too large: {hex(inst)}"))
+        raise (Exception(f"value too large: {hex(inst)}"))
 
     # instructions with 0 params
     if inst == 0x00E0:
@@ -63,7 +64,7 @@ def inst_to_asm(inst):
             return f"LD B, v{hex(reg)[-1]}"
         elif postfix == 0x55:
             return f"LD [I], v{hex(reg)[-1]}"
-        elif postfix == 0x55:
+        elif postfix == 0x65:
             return f"LD v{hex(reg)[-1]}, [I]"
 
     # two parameters, both of which are registers
@@ -94,9 +95,9 @@ def inst_to_asm(inst):
     elif prefix == 0x9 and postfix == 0x0:
         return f"SNE v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
 
-    #three parameters, 2 of which are registers and one of which is a byte
+    # three parameters, 2 of which are registers and one of which is a byte
     nibble = postfix
-    if prefix == 0xd:
+    if prefix == 0xD:
         return f"DRW v{hex(reg1)[-1]}, v{hex(reg2)[-1]}, {nibble}"
 
     # invalid instruction
@@ -164,7 +165,7 @@ def inst_to_asmdesc(inst):
             return f"convert the value in v{hex(reg)[-1]} to decimal and store the digits in memory at I through I+2"
         elif postfix == 0x55:
             return f"store the values in registers v0 through v{hex(reg)[-1]} in memory starting at the address in I"
-        elif postfix == 0x55:
+        elif postfix == 0x65:
             return f"read memory into registers v0 through v{hex(reg)[-1]} starting at the address in I"
 
     # two parameters, both of which are registers
@@ -195,46 +196,44 @@ def inst_to_asmdesc(inst):
     elif prefix == 0x9 and postfix == 0x0:
         return f"skip the next instruction if the values in v{hex(reg1)[-1]} and v{hex(reg2)[-1]} are not equal"
 
-    #three parameters, 2 of which are registers and one of which is a byte
+    # three parameters, 2 of which are registers and one of which is a byte
     nibble = postfix
-    if prefix == 0xd:
+    if prefix == 0xD:
         return f"draw {nibble} bytes on the display at coordinates stored in v{hex(reg1)[-1]}, v{hex(reg2)[-1]}"
 
     # invalid instruction
     else:
         return "invalid instruction"
 
+
 def decompile(infile, outfile):
     """decompile a ch8 binary back into an assembly file"""
-    
+
     with open(infile, "rb") as inf:
         with open(outfile, "w") as outf:
 
-            memloc = 0x200 # we include memory location for easier debugging
-            while data:=inf.read(1):
+            memloc = 0x200  # we include memory location for easier debugging
+            while data := inf.read(1):
                 prefix = data
                 postfix = inf.read(1)
                 if not postfix:
-                    postfix = b'\x00'
+                    postfix = b"\x00"
 
-                instcode = (int.from_bytes(prefix, "big") << 8) + int.from_bytes(postfix, "big")
+                instcode = (int.from_bytes(prefix, "big") << 8) + int.from_bytes(
+                    postfix, "big"
+                )
 
-                outf.write(hex(memloc)+"\t")
+                outf.write(hex(memloc) + "\t")
                 outf.write(inst_to_asm(instcode) + "\n")
 
                 memloc += 2
+
 
 def main():
     infile = sys.argv[1]
     outfile = sys.argv[2]
     decompile(infile, outfile)
 
+
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-

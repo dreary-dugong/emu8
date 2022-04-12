@@ -195,7 +195,7 @@ class Chip:
         inst = self.mem[self.pc]  # first byte
         inst = inst << 8  # shift over to make room for second byte
         inst = inst + self.mem[self.pc + 1]  # add second byte
-        return inst 
+        return inst
 
     def run(self):
         """run all instructions in program memory"""
@@ -503,7 +503,7 @@ class Chip:
     def ADDi(self, reg):
         """instruction to add the value in a register to the I register"""
         self.regI += self.regs[reg]
-        self.regI = self.regI & (2 ** 12 - 1)  # maintain 12 bits
+        self.regI = self.regI & (2**12 - 1)  # maintain 12 bits
         self.pc += 2
 
     def LDdigit(self, reg):

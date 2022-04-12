@@ -125,6 +125,7 @@ def update_keys(chip, tui, currPress):
         else:
             chip.keys[i] = False
 
+
 def update_keys_debug(chip, tui, press):
     """toggle the chip's keys according to what's pressed on the keyboard"""
     keys = (
@@ -155,7 +156,7 @@ def update_keys_debug(chip, tui, press):
 def run_chip(chip, tui, refreshrate, stdscr):
     """cycle the chip and update the display according to the refresh rate"""
 
-    currPress = ["", 0] # initialize key press history to nothing
+    currPress = ["", 0]  # initialize key press history to nothing
 
     while chip.get_curr_inst() != chip8.Chip.EXIT:
 
@@ -168,9 +169,8 @@ def run_chip(chip, tui, refreshrate, stdscr):
                 screenUpdated = True
 
             # run the chip and check for input
-            update_keys(chip, tui, currPress) 
+            update_keys(chip, tui, currPress)
             chip.cycle()
-
 
         # if we're running the tui in fast mode,
         # don't update it unless draw has been called
@@ -180,10 +180,11 @@ def run_chip(chip, tui, refreshrate, stdscr):
         else:
             tui.update()
 
+
 def run_debug(chip, tui, stdscr):
     """cycle the chip and update the display only when space is pressed"""
 
-    states = deque() # copies of the chip at previous states, this eats a ton of memory
+    states = deque()  # copies of the chip at previous states, this eats a ton of memory
     while chip.get_curr_inst() != chip8.Chip.EXIT:
 
         press = tui.inputWin.getch()
@@ -194,15 +195,15 @@ def run_debug(chip, tui, stdscr):
                 states.append(copy.deepcopy(chip))
                 chip.cycle()
 
-            # go back 
+            # go back
             elif press == ord("z"):
                 try:
                     chip = states.pop()
                     tui.chip = chip
-                except: # if the states deque is empty, do nothing
+                except:  # if the states deque is empty, do nothing
                     pass
 
-            # toggle chip keys 
+            # toggle chip keys
             else:
                 update_keys_debug(chip, tui, press)
 
@@ -235,7 +236,12 @@ def init_argparse():
         help="""set the number of cycles between
             screen refreshes (default 10)""",
     )
-    parser.add_argument("-cm", "--comprehensive", action="store_true", help="run in comprehensive windowed mode")
+    parser.add_argument(
+        "-cm",
+        "--comprehensive",
+        action="store_true",
+        help="run in comprehensive windowed mode",
+    )
     parser.add_argument("-db", "--debug", action="store_true", help="run in debug mode")
 
     return parser

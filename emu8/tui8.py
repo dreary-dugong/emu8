@@ -9,7 +9,7 @@ class Tui:
         """inintialize instance data and set curses settings"""
         self.stdscr = stdscr
         self.chip = chip
-        self.compmode = compmode # are we running in fast mode or comprehensive mode
+        self.compmode = compmode  # are we running in fast mode or comprehensive mode
 
         curses.initscr()  # intialize screen
         curses.noecho()  # don't write pressed characters to the screen
@@ -74,10 +74,10 @@ class Tui:
         """create window to display chip memory contents"""
         self.memWin = curses.newwin(45, 27, 0, 130)
 
-        memlimit = 20 
+        memlimit = 20
 
         # each row in the 3 columns
-        for y in range(2*memlimit + 1):
+        for y in range(2 * memlimit + 1):
 
             # memory address column
             self.memWin.addstr(y, 0, Tui.triple_hex(0))
@@ -138,7 +138,6 @@ class Tui:
         self.descWin.addstr(2, 0, "invalid instruction", curses.color_pair(0))
 
         self.descWin.refresh()
-
 
     def init_input_win(self):
         """initialize a blank window to accept user input"""
@@ -224,11 +223,15 @@ class Tui:
             # memory address column
             self.memWin.addstr(y, 0, Tui.triple_hex(addr), curses.color_pair(color))
             # memory value column
-            self.memWin.addstr(y, 6, Tui.double_hex(mem[addr]), curses.color_pair(color))
+            self.memWin.addstr(
+                y, 6, Tui.double_hex(mem[addr]), curses.color_pair(color)
+            )
             # assembly instruction column
             if addr % 2 == 0:
-                inst = (mem[addr] << 8) + mem[addr+1]
-                self.memWin.addstr(y, 12, debug8.inst_to_asm(inst), curses.color_pair(color))
+                inst = (mem[addr] << 8) + mem[addr + 1]
+                self.memWin.addstr(
+                    y, 12, debug8.inst_to_asm(inst), curses.color_pair(color)
+                )
             else:
                 self.memWin.addstr(y, 12, "               ", curses.color_pair(color))
 
@@ -257,10 +260,10 @@ class Tui:
         mem = self.chip.mem
 
         self.descWin.erase()
-        
-        prevInst = (mem[pc-2] << 8) + mem[pc-1]
-        currInst = (mem[pc] << 8) + mem[pc+1]
-        nextInst = (mem[pc+2] << 8) + mem[pc+3]
+
+        prevInst = (mem[pc - 2] << 8) + mem[pc - 1]
+        currInst = (mem[pc] << 8) + mem[pc + 1]
+        nextInst = (mem[pc + 2] << 8) + mem[pc + 3]
 
         prevDesc = debug8.inst_to_asmdesc(prevInst)
         currDesc = debug8.inst_to_asmdesc(currInst)
